@@ -3,11 +3,15 @@
 ctgov_fetch.py — Search and download study records from ClinicalTrials.gov API v2.
 
 Usage:
-    # Search for studies by drug name (returns summary list)
+    # Fetch ALL studies for a drug (primary workflow: search + download everything)
+    python scripts/ctgov_fetch.py fetch-all --drug izokibep --output-dir data/
+    python scripts/ctgov_fetch.py fetch-all --drug izokibep --sponsor "ACELYRIN"
+
+    # Search only (returns summary list, no downloads)
     python scripts/ctgov_fetch.py search --drug izokibep
     python scripts/ctgov_fetch.py search --drug izokibep --sponsor "ACELYRIN"
 
-    # Download full study records by NCT ID
+    # Download specific study records by NCT ID
     python scripts/ctgov_fetch.py fetch --nct NCT05355805
     python scripts/ctgov_fetch.py fetch --nct NCT05355805 --nct NCT05623345
 """
@@ -265,6 +269,94 @@ def _extract_results(results: dict) -> dict:
     }
 
 
+def fetch_all_for_drug(
+    drug_name: str,
+    output_dir: str = ".",
+    sponsor_filter: str = None,
+    max_results: int = 50,
+) -> dict:
+    """Search for all studies involving a drug, then fetch every one.
+
+    This is the primary workflow: user picks a candidate from the S-1,
+    we search ClinicalTrials.gov by drug name, download ALL matching studies,
+    and return a manifest the comparison_builder can consume.
+
+    Returns:
+        {
+          "drug_name": str,
+          "search_hits": int,
+          "studies_fetched": int,
+          "studies_with_results": int,
+          "studies": [<fetch_study return dicts>],
+          "errors": [<any failed NCTs>],
+          "output_dir": str,
+        }
+    """
+    print(f"Searching ClinicalTrials.gov for: {drug_name}", file=sys.stderr)
+    search_results = search_by_name(drug_name, max_results, sponsor_filter)
+    print(f"  Found {len(search_results)} studies", file=sys.stderr)
+
+    if not search_results:
+        return {
+            "drug_name": drug_name,
+            "search_hits": 0,
+            "studies_fetched": 0,
+            "studies_with_results": 0,
+            "studies": [],
+            "errors": [],
+            "output_dir": output_dir,
+        }
+
+    # Create drug-specific subdirectory
+    drug_dir = os.path.join(output_dir, f"ctgov_{drug_name.replace(' ', '_').lower()}")
+    os.makedirs(drug_dir, exist_ok=True)
+
+    # Save search results manifest
+    search_manifest_path = os.path.join(drug_dir, "search_results.json")
+    with open(search_manifest_path, "w", encoding="utf-8") as f:
+        json.dump(search_results, f, indent=2, ensure_ascii=False)
+
+    # Fetch every study
+    fetched = []
+    errors = []
+    for i, sr in enumerate(search_results, 1):
+        nct_id = sr["nct_id"]
+        print(f"  [{i}/{len(search_results)}] Fetching {nct_id}: {sr['brief_title'][:60]}...", file=sys.stderr)
+        try:
+            result = fetch_study(nct_id, drug_dir)
+            if "error" in result:
+                print(f"    ERROR: {result['error']}", file=sys.stderr)
+                errors.append({"nct_id": nct_id, "error": result["error"]})
+            else:
+                status_str = "POSTED" if result["has_results"] else "NOT YET POSTED"
+                print(f"    Status: {result['overall_status']} | Results: {status_str}", file=sys.stderr)
+                fetched.append(result)
+        except Exception as e:
+            print(f"    FAILED: {e}", file=sys.stderr)
+            errors.append({"nct_id": nct_id, "error": str(e)})
+
+    studies_with_results = sum(1 for s in fetched if s.get("has_results"))
+
+    manifest = {
+        "drug_name": drug_name,
+        "search_hits": len(search_results),
+        "studies_fetched": len(fetched),
+        "studies_with_results": studies_with_results,
+        "studies": fetched,
+        "errors": errors,
+        "output_dir": drug_dir,
+    }
+
+    # Save the full manifest
+    manifest_path = os.path.join(drug_dir, "manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+    print(f"\n  Manifest saved: {manifest_path}", file=sys.stderr)
+    print(f"  {len(fetched)} studies fetched ({studies_with_results} with results, {len(errors)} errors)", file=sys.stderr)
+
+    return manifest
+
+
 def search_by_name(
     drug_name: str,
     max_results: int = 50,
@@ -376,6 +468,25 @@ def main():
         help="Maximum number of results (default: 50)",
     )
 
+    # fetch-all action — search by drug name, then download ALL studies
+    fetchall_parser = subparsers.add_parser(
+        "fetch-all", help="Search by drug name and download ALL matching studies",
+    )
+    fetchall_parser.add_argument(
+        "--drug", required=True, help="Drug/intervention name",
+    )
+    fetchall_parser.add_argument(
+        "--output-dir", default=".",
+        help="Parent directory for output (default: current directory)",
+    )
+    fetchall_parser.add_argument(
+        "--sponsor", default=None, help="Optional sponsor name to filter by",
+    )
+    fetchall_parser.add_argument(
+        "--max-results", type=int, default=50,
+        help="Maximum number of results (default: 50)",
+    )
+
     args = parser.parse_args()
 
     if args.action == "fetch":
@@ -405,6 +516,15 @@ def main():
             results_str = " [HAS RESULTS]" if r['has_results'] else ""
             print(f"  {r['nct_id']}: {r['brief_title'][:70]} ({status_str}){results_str}", file=sys.stderr)
         print(json.dumps(results, indent=2))
+
+    elif args.action == "fetch-all":
+        manifest = fetch_all_for_drug(
+            drug_name=args.drug,
+            output_dir=args.output_dir,
+            sponsor_filter=args.sponsor,
+            max_results=args.max_results,
+        )
+        print(json.dumps(manifest, indent=2))
 
     else:
         # Backward-compatible: if no subcommand, treat --nct as fetch
