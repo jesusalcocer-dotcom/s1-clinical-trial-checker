@@ -1,0 +1,285 @@
+{
+  "checks": [
+    {
+      "id": "basic_disclosure",
+      "pass": "pass_1_crosscutting",
+      "display_name": "Basic Disclosure (Identity Card)",
+      "plain_english": "Checks whether the S-1 provides the fundamental clinical trial information that investors need to understand the company's pipeline: trial identifiers (NCT numbers), indications, phases, enrollment numbers, and key dates.",
+      "why_it_matters": "Without basic trial identity information, investors cannot independently verify any claims the S-1 makes about clinical trials by cross-referencing with ClinicalTrials.gov.",
+      "legal_basis": ["rule_408", "section_11"],
+      "elements": [
+        {
+          "name": "NCT Number Disclosure",
+          "standard": "Each trial discussed in the S-1 should include its ClinicalTrials.gov NCT identifier",
+          "good_example": {
+            "text": "Our Phase 2 trial (NCT04034225) enrolled 120 patients with moderate-to-severe rheumatoid arthritis at 15 sites in the United States.",
+            "source": "Composite example based on well-drafted S-1s"
+          },
+          "bad_example": {
+            "text": "We are conducting a Phase 2 clinical trial for the treatment of rheumatoid arthritis.",
+            "source": "Common pattern — no NCT number, no enrollment, no sites"
+          },
+          "how_system_checks": "CODE: cross-references S-1 drug names and indications against ClinicalTrials.gov API results to identify trials discussed in the S-1. LLM: evaluates whether each trial mentioned has sufficient identification."
+        },
+        {
+          "name": "Enrollment Numbers",
+          "standard": "Trial enrollment count should be disclosed for any trial where results are discussed",
+          "how_system_checks": "CODE: extracts enrollment from ClinicalTrials.gov. LLM: checks whether S-1 discloses enrollment for each trial where data is presented."
+        }
+      ]
+    },
+    {
+      "id": "phase_labels",
+      "pass": "pass_1_crosscutting",
+      "display_name": "Phase Labels (Nomenclature)",
+      "plain_english": "Checks whether clinical trial phases are accurately labeled in the S-1 and whether combined phase labels (e.g., 'Phase 1/2') are adequately explained.",
+      "why_it_matters": "Inaccurate phase labels can make a pipeline appear more advanced than it is. The SEC has consistently challenged combined phase labels that may 'imply a shorter clinical trial process or further progress than has actually been made.'",
+      "legal_basis": ["rule_408"],
+      "comment_letter_precedent": ["excerpt_phase_001", "excerpt_phase_002", "excerpt_phase_003"],
+      "elements": [
+        {
+          "name": "Phase Accuracy",
+          "standard": "Phase labels in S-1 should match ClinicalTrials.gov phase designations",
+          "good_example": {
+            "text": "Our Phase 1/2 clinical trial (NCT04034225) consists of two portions: a Phase 1 dose escalation portion evaluating safety and tolerability in approximately 30 patients, followed by a Phase 2 dose expansion portion evaluating efficacy (ORR, DOR, PFS) in an additional 90 patients.",
+            "source": "Composite based on Nuvalent and Sensei response patterns"
+          },
+          "bad_example": {
+            "text": "Our Phase 1/2 trial is progressing well and we expect to advance to Phase 3 shortly.",
+            "source": "Problematic pattern — combined label without explanation, implied shorter timeline"
+          },
+          "how_system_checks": "CODE: compares S-1 phase labels to ClinicalTrials.gov phase field. LLM: evaluates whether combined phase labels are explained with distinct Phase 1 and Phase 2 portions."
+        }
+      ]
+    },
+    {
+      "id": "preclinical_framing",
+      "pass": "pass_1_crosscutting",
+      "display_name": "Preclinical Framing",
+      "plain_english": "Checks whether the S-1 appropriately frames preclinical and animal study data without implying established clinical safety or efficacy.",
+      "why_it_matters": "The SEC consistently requires removal of safety and efficacy inferences from animal data. Preclinical results frequently do not translate to humans, and investors may be misled about the drug's prospects.",
+      "legal_basis": ["rule_408", "section_11"],
+      "comment_letter_precedent": ["excerpt_preclinical_001", "excerpt_preclinical_002", "excerpt_preclinical_003"],
+      "elements": [
+        {
+          "name": "Safety/Efficacy Inference from Animal Data",
+          "standard": "S-1 should present preclinical data objectively without concluding safety or efficacy. 'Safety and efficacy determinations are solely within the authority of the FDA.'",
+          "good_example": {
+            "text": "In preclinical studies using a mouse model of ulcerative colitis (N=24), treatment with our compound resulted in a 45% reduction in inflammatory markers (IL-6, TNF-alpha) compared to vehicle control (p<0.01). These preclinical results may not be predictive of results in clinical trials.",
+            "source": "Composite based on SEC-compliant disclosure patterns"
+          },
+          "bad_example": {
+            "text": "Our lead product candidate has demonstrated promising efficacy in animal models and has a long history of safe use in traditional medicine.",
+            "source": "Curanex Pharmaceuticals — challenged in SEC comment letter (excerpt_preclinical_001)"
+          },
+          "how_system_checks": "CODE: regex scans for phrases like 'demonstrated efficacy,' 'proven safe,' 'established safety profile' near preclinical/animal context. LLM: evaluates whether preclinical claims cross the line from objective data to safety/efficacy conclusions."
+        }
+      ]
+    },
+    {
+      "id": "comparative_claims",
+      "pass": "pass_1_crosscutting",
+      "display_name": "Comparative Claims",
+      "plain_english": "Checks whether the S-1 makes unsupported comparisons to approved therapies or competitor products, or uses terms that imply superiority without adequate basis.",
+      "why_it_matters": "Terms like 'best-in-class,' 'superior,' and 'more effective' imply the product is likely to be effective and approved. The SEC requires these claims be supported by head-to-head data or removed.",
+      "legal_basis": ["rule_408", "section_11"],
+      "comment_letter_precedent": ["excerpt_comparative_001", "excerpt_comparative_002", "excerpt_comparative_003"],
+      "elements": [
+        {
+          "name": "Superiority Language",
+          "standard": "Claims of being 'best-in-class,' 'first-in-class,' 'superior,' 'safer,' or 'more effective' than approved therapies require head-to-head clinical data. Qualifying language ('we believe') does NOT cure the concern.",
+          "good_example": {
+            "text": "Our compound uses a different mechanism of action than currently approved therapies. In preclinical models (not head-to-head clinical trials), our compound showed [specific objective data]. There can be no assurance that these preclinical results will translate to clinical superiority.",
+            "source": "Composite based on SEC-approved alternative from Relay Therapeutics response"
+          },
+          "bad_example": {
+            "text": "We believe obexelimab is safer and more effective than anti-CD20 therapies.",
+            "source": "Zenas BioPharma — challenged in SEC comment letter (excerpt_comparative_003). SEC explicitly stated qualifying language does not address the concern."
+          },
+          "how_system_checks": "CODE: regex scans for 'best-in-class,' 'first-in-class,' 'superior,' 'differentiated,' 'safer,' 'more effective.' LLM: evaluates whether comparisons are supported by head-to-head data and whether appropriate caveats are present."
+        }
+      ]
+    },
+    {
+      "id": "fda_communications",
+      "pass": "pass_1_crosscutting",
+      "display_name": "FDA Communications",
+      "plain_english": "Checks whether the S-1 presents a balanced picture of FDA interactions. If positive interactions are described, negative or cautionary feedback should also be disclosed.",
+      "why_it_matters": "Selective disclosure of only positive FDA feedback while omitting concerns or denials creates a misleadingly optimistic regulatory picture. This was the exact pattern in SEC v. AVEO Pharmaceuticals.",
+      "legal_basis": ["rule_408", "omnicare", "tongue_v_sanofi"],
+      "enforcement_precedent": ["aveo_pharma"],
+      "elements": [
+        {
+          "name": "Balance of FDA Disclosure",
+          "standard": "If the S-1 mentions any positive FDA interaction (breakthrough therapy, fast track, alignment meeting, positive feedback), the company should also disclose any material negative FDA interactions (concerns raised, additional study requests, designation denials).",
+          "good_example": {
+            "text": "We received Breakthrough Therapy Designation for our lead compound in June 2024. The FDA also requested that we conduct an additional pharmacokinetics study prior to Phase 3 initiation, which we are currently planning.",
+            "source": "Composite based on balanced disclosure pattern"
+          },
+          "bad_example": {
+            "text": "We have had productive interactions with the FDA and believe our regulatory strategy is well-positioned for approval.",
+            "source": "Generic optimistic language pattern — omits any specific FDA concerns or requirements"
+          },
+          "gray_area_example": {
+            "text": "We received feedback from the FDA at our Type B meeting. We are incorporating the FDA's recommendations into our Phase 3 trial design.",
+            "explanation": "Acknowledges FDA feedback without specifying whether it was positive or negative. This is borderline — transparent about the interaction occurring, but ambiguous about content."
+          },
+          "how_system_checks": "LLM: identifies mentions of FDA interactions in the S-1 and evaluates whether positive and negative interactions are balanced. Cross-references with any publicly available FDA meeting minutes or ClinicalTrials.gov protocol amendments."
+        }
+      ]
+    },
+    {
+      "id": "pipeline_accuracy",
+      "pass": "pass_1_crosscutting",
+      "display_name": "Pipeline Accuracy",
+      "plain_english": "Checks whether the S-1's pipeline table and program descriptions are consistent with ClinicalTrials.gov data, including trial status, phases, and enrollment.",
+      "why_it_matters": "Pipeline tables are often the first thing investors examine. Inaccurate pipeline representations — showing trials as more advanced than they are, or omitting terminated trials — can mislead investors about the company's prospects.",
+      "legal_basis": ["rule_408", "section_11"],
+      "elements": [
+        {
+          "name": "Trial Status Consistency",
+          "standard": "Trial statuses in the S-1 (active, enrolling, completed) should match ClinicalTrials.gov records",
+          "how_system_checks": "CODE: compares S-1 pipeline claims against ClinicalTrials.gov status field. Flags trials that the S-1 shows as active but ClinicalTrials.gov shows as terminated, withdrawn, or suspended."
+        },
+        {
+          "name": "Completeness",
+          "standard": "All material clinical trials registered on ClinicalTrials.gov should be discussed in the S-1",
+          "how_system_checks": "CODE: identifies all trials registered under the company's sponsor name on ClinicalTrials.gov. LLM: checks whether each trial is discussed in the S-1 and flags any omitted trials."
+        }
+      ]
+    },
+    {
+      "id": "red_flag_phrases",
+      "pass": "pass_1_crosscutting",
+      "display_name": "Red Flag Phrases",
+      "plain_english": "Scans the S-1 for specific phrases that the SEC has historically challenged in comment letters, including safety characterizations, efficacy claims, and comparative language.",
+      "why_it_matters": "Certain phrases reliably trigger SEC comment letters. Their presence in the S-1 indicates the filing may not survive SEC review and may contain language that overstates the drug's prospects.",
+      "legal_basis": ["rule_408"],
+      "comment_letter_precedent": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_comparative_001", "excerpt_comparative_002"],
+      "elements": [
+        {
+          "name": "Prohibited Safety Language",
+          "standard": "Phrases like 'safe,' 'safe and effective,' 'favorable safety profile,' 'acceptable safety profile' should not appear in reference to unapproved product candidates",
+          "how_system_checks": "CODE: regex scan for prohibited phrases from red_flag_phrases.txt. LLM: evaluates context to confirm the phrase refers to an unapproved product."
+        },
+        {
+          "name": "Prohibited Comparative Language",
+          "standard": "Phrases like 'best-in-class,' 'first-in-class,' 'superior,' 'more effective' should not appear without head-to-head clinical data",
+          "how_system_checks": "CODE: regex scan for comparative phrases. LLM: checks whether head-to-head data is cited to support the claim."
+        }
+      ]
+    },
+    {
+      "id": "trial_design_comparison",
+      "pass": "pass_2_trial_level",
+      "display_name": "Trial Design Comparison",
+      "plain_english": "For each trial, compares the trial design described in the S-1 to the design registered on ClinicalTrials.gov. Checks for discrepancies in randomization, blinding, comparator, and other design elements.",
+      "why_it_matters": "Trial design elements (randomization, blinding, active vs placebo comparator) directly affect the reliability of results. If the S-1 describes results from an open-label, single-arm trial without disclosing these design limitations, investors may overestimate the evidence quality.",
+      "legal_basis": ["rule_408", "omnicare", "rigel_pharma"],
+      "elements": [
+        {
+          "name": "Design Element Disclosure",
+          "standard": "S-1 should disclose: randomization (yes/no), blinding (open-label/single-blind/double-blind), comparator (placebo/active/none), enrollment number, and number of sites",
+          "how_system_checks": "CODE: extracts trial design from ClinicalTrials.gov (study_type, allocation, intervention_model, masking). LLM: checks whether each design element is disclosed in the S-1's trial description."
+        }
+      ]
+    },
+    {
+      "id": "endpoints_statistics",
+      "pass": "pass_2_trial_level",
+      "display_name": "Endpoints & Statistics",
+      "plain_english": "Compares the endpoints and statistical results discussed in the S-1 to what is registered on ClinicalTrials.gov. Checks whether primary and secondary endpoints are clearly distinguished and whether results are presented accurately.",
+      "why_it_matters": "The Harkonen/InterMune case demonstrated that leading with secondary or post-hoc results while burying a primary endpoint failure can constitute fraud. Investors need to understand which results are from pre-specified primary analyses vs. exploratory analyses.",
+      "legal_basis": ["rule_408", "matrixx", "tsc_industries"],
+      "enforcement_precedent": ["harkonen_intermune", "clovis"],
+      "elements": [
+        {
+          "name": "Primary vs Secondary Endpoint Hierarchy",
+          "standard": "S-1 should clearly identify which results are from primary endpoints, which from secondary, and which from exploratory/post-hoc analyses. Primary endpoint results should be prominently disclosed.",
+          "good_example": {
+            "text": "The trial's primary endpoint was progression-free survival. The trial did not meet its primary endpoint (HR 0.85, p=0.12). A pre-specified secondary endpoint of overall response rate showed a 35% response rate in the treatment arm vs 20% in the placebo arm (p=0.04).",
+            "source": "Composite based on transparent disclosure pattern"
+          },
+          "bad_example": {
+            "text": "The trial demonstrated a 70% reduction in mortality in patients with mild-to-moderate disease (p=0.004).",
+            "source": "Harkonen pattern — leading with a post-hoc subgroup result without prominently disclosing the primary endpoint failure"
+          },
+          "how_system_checks": "CODE: extracts primary and secondary endpoints from ClinicalTrials.gov. LLM: checks whether S-1 results discussion includes primary endpoint results and whether the hierarchy (primary/secondary/exploratory) is clear."
+        },
+        {
+          "name": "Metric Definition Accuracy",
+          "standard": "Efficacy metrics (ORR, response rate, etc.) should use FDA-standard definitions. If non-standard metrics are used (unconfirmed responses, per-protocol population), this must be disclosed.",
+          "how_system_checks": "LLM: evaluates whether efficacy metrics are clearly defined and whether any non-standard definitions are disclosed. References the Clovis enforcement precedent for confirmed vs unconfirmed responses."
+        }
+      ]
+    },
+    {
+      "id": "safety_comparison",
+      "pass": "pass_2_trial_level",
+      "display_name": "Safety Data Comparison",
+      "plain_english": "Compares the safety data presented in the S-1 to the safety data posted on ClinicalTrials.gov. Checks whether serious adverse events, discontinuation rates, and safety signals are accurately reported.",
+      "why_it_matters": "Under Matrixx, adverse event data is material regardless of statistical significance. Under Omnicare, characterizing a drug as 'well-tolerated' while knowing about serious adverse events may trigger the omitted-contrary-facts test.",
+      "legal_basis": ["matrixx", "omnicare", "rule_408"],
+      "comment_letter_precedent": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_safety_005"],
+      "elements": [
+        {
+          "name": "SAE Disclosure",
+          "standard": "All serious adverse events should be reported, including type, frequency, and whether deemed treatment-related",
+          "how_system_checks": "CODE: extracts reported adverse events from ClinicalTrials.gov results (if posted). LLM: compares ClinicalTrials.gov AE data to S-1 safety discussion and identifies any SAEs omitted from the S-1."
+        },
+        {
+          "name": "Safety Characterization Support",
+          "standard": "Claims of 'well-tolerated' should be supported by disclosed AE data that investors can independently evaluate",
+          "how_system_checks": "LLM: checks whether safety characterizations (well-tolerated, manageable side effects) are accompanied by supporting AE data, per OS Therapies precedent (excerpt_safety_005)."
+        }
+      ]
+    },
+    {
+      "id": "data_maturity",
+      "pass": "pass_2_trial_level",
+      "display_name": "Data Maturity (Interim/Topline)",
+      "plain_english": "Checks whether the S-1 clearly indicates when data is interim or topline (not final), and whether there is a duty to disclose more complete data when available.",
+      "why_it_matters": "Under Rigel, companies can present topline data without disclosing the full dataset — but only if the omitted data doesn't render the topline claims misleading. Interim data may change significantly upon final analysis.",
+      "legal_basis": ["rule_408", "rigel_pharma"],
+      "elements": [
+        {
+          "name": "Data Maturity Labeling",
+          "standard": "S-1 should clearly indicate whether data is interim, topline, or from a completed analysis. Data cutoff dates should be disclosed.",
+          "how_system_checks": "LLM: evaluates whether trial results in the S-1 are labeled as interim/topline/final and whether data cutoff dates are provided."
+        },
+        {
+          "name": "Selective Presentation Check",
+          "standard": "When topline data is presented, the omitted detailed data should not render the topline claims misleading (per Rigel). If the primary endpoint failed but a secondary succeeded, both must be disclosed.",
+          "how_system_checks": "CODE: checks ClinicalTrials.gov for posted results that may contain data not reflected in the S-1. LLM: evaluates whether the topline presentation is misleading in light of any available detailed data."
+        }
+      ]
+    },
+    {
+      "id": "rule_408_pattern",
+      "pass": "guardrails",
+      "display_name": "Rule 408 Pattern Analysis",
+      "plain_english": "Synthesizes all findings from Pass 1 and Pass 2 to determine whether the pattern of omissions and de-emphases consistently favors the company, which would raise questions under Rule 408.",
+      "why_it_matters": "Individual omissions may be defensible in isolation. But when >75% of omissions favor the company, the cumulative effect may render the registration statement misleading under Rule 408's requirement that 'further material information' be added to prevent misleading statements.",
+      "legal_basis": ["rule_408", "tsc_industries"],
+      "how_system_checks": "LLM: reviews all findings from prior passes, categorizes each as FAVORS COMPANY / NEUTRAL / DISFAVORS COMPANY, and calculates the direction ratio. See guardrails.json for detailed procedure."
+    },
+    {
+      "id": "omnicare_test",
+      "pass": "guardrails",
+      "display_name": "Omnicare Opinion Test",
+      "plain_english": "Applies the Omnicare three-part test to opinion statements flagged during analysis. Checks whether opinions embed false facts, omit contrary facts, or imply stronger inquiry than what occurred.",
+      "why_it_matters": "Under Omnicare, opinion statements in registration statements can be actionable if they embed untrue factual claims, omit material contrary facts, or imply a more rigorous basis than existed. This is the primary Section 11 liability theory for biotech IPOs.",
+      "legal_basis": ["omnicare", "tongue_v_sanofi"],
+      "how_system_checks": "LLM: identifies opinion statements (safety characterizations, regulatory projections, efficacy claims), applies the three-part test, and flags risk areas. See guardrails.json for detailed procedure and calibration."
+    },
+    {
+      "id": "matrixx_check",
+      "pass": "guardrails",
+      "display_name": "Matrixx Significance Check",
+      "plain_english": "Reviews findings to ensure none are dismissed solely because underlying data lacks statistical significance. Under Matrixx, statistical significance is not a threshold for materiality.",
+      "why_it_matters": "Companies may argue that adverse events or efficacy results from small trials are immaterial because they are 'not statistically significant.' Matrixx forecloses this argument — the question is whether a reasonable investor would consider the information important.",
+      "legal_basis": ["matrixx", "tsc_industries"],
+      "how_system_checks": "LLM: reviews all findings involving small trials (N<30), adverse events, or borderline efficacy results. Notes where a statistical significance defense might be raised and applies the Matrixx/TSC Industries materiality standard. See guardrails.json for detailed procedure."
+    }
+  ]
+}
