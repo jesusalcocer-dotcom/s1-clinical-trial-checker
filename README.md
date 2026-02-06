@@ -61,7 +61,7 @@ Three layers of authority:
 ```
 s1-clinical-trial-checker/
 ├── SKILL.md                           # Orchestrator prompt (v4)
-├── s1_checker_skill_spec_v4.md        # Full technical specification
+├── s1_checker_skill_spec_v5.md        # Full technical specification (v5)
 ├── README.md                          # This file
 ├── scripts/
 │   ├── edgar_fetch.py                 # SEC EDGAR S-1 lookup + download
@@ -74,9 +74,15 @@ s1-clinical-trial-checker/
     ├── comment_letter_excerpts.json   # Verbatim SEC comment letters by topic
     ├── guardrails.json                # Layer 2 escalation procedures
     ├── guardrails.md                  # Guardrails documentation
-    ├── program_level_modules.md       # Pass 1 check details (legacy format)
-    ├── trial_level_modules.md         # Pass 2 check details (legacy format)
+    ├── legal_brief.md                 # Lawyer-auditable legal framework
+    ├── check2_phase_labels.md         # Check 2 deep-dive with comparison pairs
+    ├── checks_3_4_5.md               # Checks 3, 4, 5 deep-dive
+    ├── checks_6_7.md                 # Checks 6, 7 deep-dive
+    ├── study_specific_output.md       # Step 2 output format specification
+    ├── program_level_modules.md       # Pass 1 check details
+    ├── trial_level_modules.md         # Pass 2 check details
     ├── check_descriptions.json        # Plain-English check descriptions
+    ├── placeholders_todo.md           # Tracking unfilled S-1 text slots
     └── red_flag_phrases.txt           # SEC-challenged phrase list
 ```
 
