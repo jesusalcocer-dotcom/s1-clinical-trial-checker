@@ -3,11 +3,15 @@
 ctgov_fetch.py — Search and download study records from ClinicalTrials.gov API v2.
 
 Usage:
-    # Search for studies by drug name (returns summary list)
+    # Search + download ALL studies for a drug (primary workflow)
+    python scripts/ctgov_fetch.py fetch-all --drug izokibep --output-dir data/
+    python scripts/ctgov_fetch.py fetch-all --drug izokibep --extra-nct NCT12345678
+
+    # Search only (returns summary list, no download)
     python scripts/ctgov_fetch.py search --drug izokibep
     python scripts/ctgov_fetch.py search --drug izokibep --sponsor "ACELYRIN"
 
-    # Download full study records by NCT ID
+    # Download specific study records by NCT ID
     python scripts/ctgov_fetch.py fetch --nct NCT05355805
     python scripts/ctgov_fetch.py fetch --nct NCT05355805 --nct NCT05623345
 """
@@ -344,6 +348,94 @@ def search_by_name(
     return results
 
 
+def fetch_all_for_drug(
+    drug_name: str,
+    output_dir: str = ".",
+    additional_ncts: list[str] | None = None,
+) -> dict:
+    """Search CTgov for a drug name, then download ALL matching studies.
+
+    This is the primary entry point for the comparison workflow:
+    user picks a candidate → we fetch everything CTgov has on it.
+
+    Args:
+        drug_name: Drug/intervention name (e.g. "izokibep").
+        output_dir: Directory to save JSON files.
+        additional_ncts: Extra NCT IDs found in the S-1 that might not
+                         appear in intervention-name search (e.g. if the
+                         S-1 uses a different name or code).
+
+    Returns:
+        Dict with:
+            drug_name: str
+            studies_found: int
+            studies: list of structured study dicts (full records)
+            errors: list of any fetch errors
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Step 1: Search by drug name
+    print(f"Searching ClinicalTrials.gov for: {drug_name}", file=sys.stderr)
+    search_results = search_by_name(drug_name, max_results=100)
+    nct_ids = [r["nct_id"] for r in search_results]
+    print(f"  Found {len(nct_ids)} studies in search", file=sys.stderr)
+
+    # Step 2: Merge in any additional NCTs from the S-1
+    if additional_ncts:
+        for nct in additional_ncts:
+            nct = nct.strip().upper()
+            if nct not in nct_ids:
+                nct_ids.append(nct)
+                print(f"  Adding {nct} from S-1 (not in search results)", file=sys.stderr)
+
+    # Step 3: Download full records for all studies
+    studies = []
+    errors = []
+    for nct_id in nct_ids:
+        print(f"  Downloading {nct_id}...", file=sys.stderr)
+        result = fetch_study(nct_id, output_dir)
+        if "error" in result:
+            print(f"    ERROR: {result['error']}", file=sys.stderr)
+            errors.append({"nct_id": nct_id, "error": result["error"]})
+        else:
+            status = "POSTED" if result["has_results"] else "NOT YET POSTED"
+            print(f"    {result['brief_title'][:60]} | {result['overall_status']} | Results: {status}", file=sys.stderr)
+            # Load the structured data we just saved
+            with open(result["structured_file"], "r", encoding="utf-8") as f:
+                structured = json.load(f)
+            studies.append(structured)
+
+    # Step 4: Save a combined manifest
+    manifest = {
+        "drug_name": drug_name,
+        "studies_found": len(studies),
+        "studies": [
+            {
+                "nct_id": s["identification"]["nct_id"],
+                "brief_title": s["identification"]["brief_title"],
+                "overall_status": s["status"]["overall_status"],
+                "phases": s["design"]["phases"],
+                "enrollment": s["design"]["enrollment_count"],
+                "has_results": s["has_results"],
+            }
+            for s in studies
+        ],
+        "errors": errors,
+    }
+    manifest_path = os.path.join(output_dir, f"ctgov_{drug_name}_manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+    print(f"\n  Manifest saved: {manifest_path}", file=sys.stderr)
+
+    return {
+        "drug_name": drug_name,
+        "studies_found": len(studies),
+        "studies": studies,
+        "errors": errors,
+        "manifest_path": manifest_path,
+    }
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 def main():
@@ -363,6 +455,20 @@ def main():
         help="Directory to save JSON files (default: current directory)",
     )
 
+    # fetch-all action — search + download all studies for a drug
+    fetchall_parser = subparsers.add_parser("fetch-all", help="Search and download ALL studies for a drug")
+    fetchall_parser.add_argument(
+        "--drug", required=True, help="Drug/intervention name",
+    )
+    fetchall_parser.add_argument(
+        "--output-dir", default=".",
+        help="Directory to save JSON files (default: current directory)",
+    )
+    fetchall_parser.add_argument(
+        "--extra-nct", action="append", default=[],
+        help="Additional NCT IDs from S-1 (can specify multiple)",
+    )
+
     # search action — search for studies by drug name
     search_parser = subparsers.add_parser("search", help="Search studies by drug/intervention name")
     search_parser.add_argument(
@@ -378,7 +484,28 @@ def main():
 
     args = parser.parse_args()
 
-    if args.action == "fetch":
+    if args.action == "fetch-all":
+        extra = args.extra_nct if args.extra_nct else None
+        result = fetch_all_for_drug(args.drug, args.output_dir, extra)
+        # Print manifest (not the full structured data — too large)
+        manifest = {
+            "drug_name": result["drug_name"],
+            "studies_found": result["studies_found"],
+            "studies": [
+                {
+                    "nct_id": s["identification"]["nct_id"],
+                    "brief_title": s["identification"]["brief_title"],
+                    "overall_status": s["status"]["overall_status"],
+                    "phases": s["design"]["phases"],
+                    "has_results": s["has_results"],
+                }
+                for s in result["studies"]
+            ],
+            "errors": result["errors"],
+        }
+        print(json.dumps(manifest, indent=2))
+
+    elif args.action == "fetch":
         os.makedirs(args.output_dir, exist_ok=True)
         results = []
         for nct_id in args.nct:
