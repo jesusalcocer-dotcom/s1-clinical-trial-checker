@@ -295,5 +295,55 @@
       "verification_note": "Core facts verified from SEC litigation release URL and secondary legal analyses. Exact SEC complaint language not extracted due to access limitations."
     }
   ],
-  "comment_letter_topics": []
+  "comment_letter_topics": [
+    {
+      "topic_id": 1,
+      "name": "Safety Characterizations",
+      "excerpt_count": 5,
+      "excerpt_ids": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_safety_004", "excerpt_safety_005"],
+      "summary": "The SEC consistently rejects 'safe,' 'safe and effective,' and 'favorable safety profile' in biotech filings. 'Well-tolerated' is conditionally accepted if supported by data and no contradicting SAEs. The SEC's standard formulation: 'Safety and efficacy determinations are solely within the authority of the FDA.'"
+    },
+    {
+      "topic_id": 2,
+      "name": "Phase Nomenclature",
+      "excerpt_count": 3,
+      "excerpt_ids": ["excerpt_phase_001", "excerpt_phase_002", "excerpt_phase_003"],
+      "summary": "The SEC challenges combined phase labels ('Phase 1/2') as potentially implying shorter timelines. Companies can retain the label by demonstrating FDA acceptance of the protocol title and explaining distinct portions."
+    },
+    {
+      "topic_id": 3,
+      "name": "Preclinical Claims",
+      "excerpt_count": 3,
+      "excerpt_ids": ["excerpt_preclinical_001", "excerpt_preclinical_002", "excerpt_preclinical_003"],
+      "summary": "Cannot conclude safety or efficacy from animal/preclinical data. Must present objective data without conclusions. SEC also requires preclinical methodology details."
+    },
+    {
+      "topic_id": 4,
+      "name": "Comparative Claims",
+      "excerpt_count": 3,
+      "excerpt_ids": ["excerpt_comparative_001", "excerpt_comparative_002", "excerpt_comparative_003"],
+      "summary": "Terms like 'best-in-class,' 'first-in-class,' 'superior,' 'safer,' 'more effective' are consistently rejected. Qualifying language ('we believe') does NOT cure the concern. Head-to-head clinical data is required for direct comparisons."
+    },
+    {
+      "topic_id": 5,
+      "name": "FDA Communications",
+      "excerpt_count": 3,
+      "excerpt_ids": ["excerpt_fda_001", "excerpt_fda_002", "excerpt_fda_003"],
+      "summary": "FDA interactions must be presented with balanced view. Cannot imply approval is likely or accelerated. Cannot project approval timelines. Very limited data (N<10) requires cautionary context."
+    },
+    {
+      "topic_id": 6,
+      "name": "Trial Design Disclosure",
+      "excerpt_count": 3,
+      "excerpt_ids": ["excerpt_trial_design_001", "excerpt_trial_design_002", "excerpt_trial_design_003"],
+      "summary": "SEC requires disclosure of enrollment, endpoints, participation criteria, duration, dosage. Failed primary endpoints must be prominently disclosed in summary AND risk factors, not buried."
+    },
+    {
+      "topic_id": 7,
+      "name": "Statistical Presentation & Powering",
+      "excerpt_count": 3,
+      "excerpt_ids": ["excerpt_stats_001", "excerpt_stats_002", "excerpt_stats_003"],
+      "summary": "SEC requires companies to clarify whether studies were powered for statistical significance. If powered, p-values must be provided. Post-hoc analyses must be distinguished from pre-specified analyses."
+    }
+  ]
 }
