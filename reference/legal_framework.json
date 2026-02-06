@@ -83,7 +83,217 @@
       "verified": true
     }
   ],
-  "case_law": [],
-  "enforcement_actions": [],
+  "case_law": [
+    {
+      "id": "omnicare",
+      "name": "Omnicare, Inc. v. Laborers District Council Construction Industry Pension Fund",
+      "citation": "575 U.S. 175 (2015)",
+      "url": "https://supreme.justia.com/cases/federal/us/575/175/",
+      "opinion_url": "https://www.supremecourt.gov/opinions/14pdf/13-435_0971.pdf",
+      "author": "Justice Kagan (joined by Roberts, Kennedy, Ginsburg, Breyer, Alito, Sotomayor)",
+      "facts_summary": "Omnicare was the nation's largest pharmacy services provider for nursing home residents. In its 2005 IPO registration statement, it stated: 'We believe our contract arrangements with other healthcare providers, our pharmaceutical suppliers and our pharmacy practices are in compliance with applicable federal and state laws.' After the offering, the federal government sued Omnicare under the False Claims Act, alleging kickbacks from pharmaceutical manufacturers. Investors sued under Section 11 claiming the 'We believe' compliance statements were actionable.",
+      "holding": "A sincere statement of pure opinion is not an 'untrue statement of material fact' under Section 11's first clause, regardless of whether an investor can ultimately prove the belief wrong. However, under Section 11's omissions clause, an opinion statement can be actionable if the registration statement omits material facts about the issuer's inquiry into or knowledge concerning the opinion, and those omitted facts conflict with what a reasonable investor would take from the statement itself.",
+      "three_part_test": {
+        "test_1_sincerity": {
+          "description": "Every opinion statement affirms at least one fact: that the speaker actually holds the stated belief. If the speaker did not sincerely hold the opinion, it is an untrue statement of fact.",
+          "exact_quote": "A sincere statement of pure opinion is not an 'untrue statement of material fact,' regardless whether an investor can ultimately prove the belief wrong.",
+          "example_in_our_context": "If the S-1 says 'We believe the drug was well-tolerated' but internal safety committee minutes show the company had serious safety concerns, the opinion may not be sincerely held."
+        },
+        "test_2_embedded_facts": {
+          "description": "Some opinion statements contain factual assertions within them. A statement framed as opinion may embed independently verifiable factual claims.",
+          "exact_quote": "In addition, some sentences that begin with opinion words like 'I believe' contain embedded statements of fact.",
+          "example_in_our_context": "When the S-1 says 'We believe the drug was well-tolerated,' this embeds the factual claim that the company's clinical data supports the characterization. If the data shows a 50% serious adverse event rate, the embedded fact may be untrue."
+        },
+        "test_3_omissions_misleading_opinions": {
+          "description": "An opinion can be misleading through omission if the registration statement fails to disclose material facts about the issuer's inquiry into or knowledge concerning the opinion, and those facts conflict with what a reasonable investor would take from the statement.",
+          "exact_quote_basis": "[A] reasonable investor may, depending on the circumstances, understand an opinion statement to convey facts about how the speaker has formed the opinion — or, otherwise put, about the speaker's basis for holding that view.",
+          "exact_quote_fairly_aligns": "He expects not just that the issuer believes the opinion (however irrationally), but that it fairly aligns with the information in the issuer's possession at the time.",
+          "exact_quote_meaningful_inquiry": "[A]n investor, though recognizing that legal opinions can prove wrong in the end, still likely expects such an assertion to rest on some meaningful legal inquiry — rather than, say, on mere intuition, however sincere.",
+          "exact_quote_omissions_test": "[I]f a registration statement omits material facts about the issuer's inquiry into or knowledge concerning a statement of opinion, and if those facts conflict with what a reasonable investor would take from the statement itself, then the registration statement's omission of those facts makes the opinion statement misleading.",
+          "example_in_our_context": "The company says 'we believe we have aligned with the FDA' but omits the fact that the FDA denied their Breakthrough Therapy Designation application. A reasonable investor would expect the 'alignment' claim to fairly align with the actual FDA interactions."
+        }
+      },
+      "limiting_language": {
+        "exact_quote": "A reasonable investor does not expect that every opinion in a registration statement is correct; opinions, after all, are inherently uncertain.",
+        "calibration_implication": "The tool should not treat every opinion in the S-1 as suspect. Only opinions where the three-part test is met — where the company knew specific contrary facts, or where the opinion embeds a false factual claim, or where the opinion implies an inquiry stronger than what occurred — should be flagged."
+      },
+      "verified": true,
+      "verification_note": "Quotes verified across multiple sources: Harvard Law corpgov blog, D&O Diary, Mintz law firm analysis, Orrick securities litigation blog, FindLaw. Some quotes may have minor formatting differences from slip opinion but substance is verified."
+    },
+    {
+      "id": "matrixx",
+      "name": "Matrixx Initiatives, Inc. v. Siracusano",
+      "citation": "563 U.S. 27 (2011)",
+      "url": "https://supreme.justia.com/cases/federal/us/563/27/",
+      "opinion_url": "https://www.law.cornell.edu/supct/html/09-1156.ZO.html",
+      "author": "Justice Sotomayor (unanimous, 9-0)",
+      "facts_summary": "Matrixx Initiatives manufactured Zicam Cold Remedy, a zinc-based intranasal product. Multiple medical professionals reported adverse events linking Zicam to anosmia (loss of smell). Matrixx received these reports and was named in product liability lawsuits, but made public statements touting Zicam's safety without disclosing the adverse event reports. The FDA later issued a warning letter citing 130 reports of anosmia. Matrixx argued that the adverse event reports were immaterial because they had not reached 'statistical significance.'",
+      "holding": "The Supreme Court unanimously held that plaintiffs alleging securities fraud need not plead statistical significance to adequately allege materiality of adverse event reports. Materiality is a fact-specific inquiry under the 'total mix' standard, not a bright-line statistical test. The Court rejected Matrixx's proposed rule that would artificially exclude information otherwise considered significant to a reasonable investor's trading decision.",
+      "key_quotes": {
+        "rejecting_statistical_significance": "Matrixx's argument rests on the premise that statistical significance is the only reliable indication of causation. This premise is flawed.",
+        "lack_of_stat_sig": "A lack of statistically significant data does not mean that medical experts have no reliable basis for inferring a causal link between a drug and adverse events.",
+        "medical_professionals": "medical professionals and researchers do not limit the data they consider to the results of randomized clinical trials or to statistically significant evidence.",
+        "reasonable_investors": "Given that medical professionals and regulators act on the basis of evidence of causation that is not statistically significant, it stands to reason that in certain cases reasonable investors would as well.",
+        "artificially_excludes": "artificially exclud[e] information that would otherwise be considered significant to [a reasonable investor's] trading decision."
+      },
+      "relevance_to_our_tool": "When biotech S-1s present data from small trials (N=12, N=19), the results may not reach statistical significance. Under Matrixx, this does not make them immaterial. A 50% adverse event rate in 12 patients, or a null primary endpoint in 20 patients, is information a reasonable investor would want to know.",
+      "common_company_defense_this_rejects": "The company may argue that small trial results or individual adverse events are 'not statistically significant' and therefore immaterial. Matrixx forecloses this argument.",
+      "verified": true,
+      "verification_note": "Quotes verified via Cornell LII Supreme Court text, Wikipedia, Seyfarth Shaw analysis, FindLaw, and multiple law review sources."
+    },
+    {
+      "id": "tsc_industries",
+      "name": "TSC Industries, Inc. v. Northway, Inc.",
+      "citation": "426 U.S. 438 (1976)",
+      "url": "https://supreme.justia.com/cases/federal/us/426/438/",
+      "author": "Justice Marshall",
+      "facts_summary": "TSC Industries involved a proxy contest where shareholders alleged that a joint proxy statement omitted material facts about the acquisition of TSC by National Industries. The Supreme Court established the foundational definition of materiality for securities law.",
+      "holding": "An omitted fact is material if there is a substantial likelihood that a reasonable shareholder would consider it important in deciding how to vote. The standard does not require proof that disclosure would have changed the outcome.",
+      "key_quotes": {
+        "materiality_definition": "An omitted fact is material if there is a substantial likelihood that a reasonable shareholder would consider it important in deciding how to vote.",
+        "not_outcome_determinative": "It does not require proof of a substantial likelihood that disclosure of the omitted fact would have caused the reasonable investor to change his vote.",
+        "actual_significance": "contemplates a showing of a substantial likelihood that, under all the circumstances, the omitted fact would have assumed actual significance in the deliberations of the reasonable shareholder.",
+        "total_mix": "a substantial likelihood that the disclosure of the omitted fact would have been viewed by the reasonable investor as having significantly altered the 'total mix' of information made available.",
+        "avalanche_warning": "[M]anagement's fear of exposing itself to substantial liability may cause it simply to bury the shareholders in an avalanche of trivial information — a result that is hardly conducive to informed decisionmaking."
+      },
+      "relevance_to_our_tool": "TSC Industries provides the foundational materiality standard. Every finding the tool makes must be assessed through the 'total mix' lens — would a reasonable investor consider this information important? The 'avalanche' warning also provides the calibration principle: the tool should not flag every minor discrepancy, only those that would significantly alter the total mix.",
+      "verified": true,
+      "verification_note": "Foundational case widely cited. Quotes verified across multiple legal sources."
+    },
+    {
+      "id": "tongue_v_sanofi",
+      "name": "Tongue v. Sanofi",
+      "citation": "816 F.3d 199 (2d Cir. 2016)",
+      "url": "https://www.leagle.com/decision/infco20160304058",
+      "author": "Second Circuit Court of Appeals",
+      "facts_summary": "Sanofi acquired Genzyme in 2011 and issued contingent value rights (CVRs) tied to FDA approval milestones for Lemtrada (alemtuzumab) for multiple sclerosis. Genzyme had used single-blind study design in clinical trials. The FDA repeatedly expressed concerns about this methodology (2002, 2006, 2010), warning it might make approval difficult, though possibly accepting results showing 'extremely large' effects. Sanofi made optimistic statements about approval likelihood without disclosing the FDA's repeated warnings. When FDA briefing materials became public in November 2013, CVRs lost 62% of value.",
+      "holding": "The Second Circuit affirmed dismissal, holding that even under the Omnicare standard, Sanofi was not required to disclose the FDA's concerns about single-blind study design merely because those concerns cut against optimistic projections. Not every fact cutting against an opinion must be disclosed. The court relied heavily on the sophistication of CVR investors and the public nature of FDA preferences for double-blind studies.",
+      "key_quotes": {
+        "no_obligation_to_disclose_everything": "Issuers must be forthright with their investors, but securities law does not impose on them an obligation to disclose every piece of information in their possession.",
+        "omnicare_limits": "Omnicare does not impose liability merely because an issuer failed to disclose information that ran counter to an opinion expressed in the registration statement.",
+        "fairly_align_standard": "[A]s Omnicare instructs, issuers need not disclose a piece of information merely because it cuts against their projections.",
+        "fda_feedback_not_required": "Defendants need not have disclosed the FDA feedback merely because it tended to cut against their projections.",
+        "opinion_not_misleading": "[A]n opinion statement is not necessarily misleading when an issuer knows, but fails to disclose, some fact cutting the other way.",
+        "data_interpretation_dispute": "At bottom, Plaintiffs' allegations regarding Defendants' stated opinion about the Lemtrada trial results are little more than a dispute about the proper interpretation of data.",
+        "sophisticated_investors": "[W]hile a layperson, unaccustomed to the subtleties and intricacies of the pharmaceutical industry and registration statements, may have misinterpreted [the alleged misstatements] as evincing assurance of success, Plaintiffs here can claim no such ignorance.",
+        "no_reasonable_investor_misled": "Given the sophistication of the investors here, the FDA's public preference for double-blind studies, and the absence of a conflict between Defendants' statements and the FDA's comments, no reasonable investor would have been misled by Defendants' optimistic statements regarding the approval and launch of Lemtrada."
+      },
+      "key_principles": [
+        "FDA communications are evaluated under the standard 'total mix' materiality test — they are not automatically material",
+        "Under Omnicare, not every fact cutting against an opinion must be disclosed",
+        "Investor sophistication matters — retail IPO investors may be treated differently than CVR holders",
+        "Public availability of information (e.g., FDA's known preference for double-blind studies) reduces the materiality of non-disclosure",
+        "A 'dispute about data interpretation' is different from an omission of material fact"
+      ],
+      "important_caveat": "The court relied heavily on (a) the PUBLIC nature of FDA's preference for double-blind studies and (b) the SOPHISTICATION of CVR investors. This leaves open a different outcome where: (a) the FDA feedback is truly confidential/non-public, or (b) the investor audience is unsophisticated retail IPO investors — as is often the case with biotech S-1s.",
+      "relevance_to_our_tool": "This case provides important calibration: not every FDA concern needs to be flagged. However, Tongue's limiting principles (public info, sophisticated investors) often do NOT apply to biotech IPOs where retail investors rely on the S-1 and FDA feedback is often non-public. The tool should flag undisclosed negative FDA feedback but should note when the concern might be publicly known.",
+      "verified": true,
+      "verification_note": "Quotes cross-confirmed across multiple law firm analyses (Akin Gump, Haynes Boone, Paul Weiss/Harvard Law Forum, Burr & Forman, Orrick). Full slip opinion not directly accessed; quotes verified via secondary sources but may have minor formatting differences from original."
+    },
+    {
+      "id": "rigel_pharma",
+      "name": "In re Rigel Pharmaceuticals Securities Litigation",
+      "citation": "697 F.3d 869 (9th Cir. 2012)",
+      "url": "https://casetext.com/case/in-re-rigel-pharms-inc-sec-litig",
+      "author": "Ninth Circuit Court of Appeals",
+      "facts_summary": "Rigel developed R788 (fostamatinib), an oral Syk kinase inhibitor for rheumatoid arthritis. In a Phase IIa trial (189 patients, double-blind, placebo-controlled), Rigel issued a December 2007 press release disclosing 'top-line data' showing statistically significant efficacy (ACR20/50/70 response rates) and some safety data. Eleven months later at the ACR meeting, full data revealed country interaction effects, additional safety findings (blood pressure increases, liver enzyme elevations), and more granular adverse event data. The stock dropped 38% in a single day after the ACR presentation.",
+      "holding": "The Ninth Circuit affirmed dismissal, holding that: (1) partial disclosure of top-line clinical trial data does NOT render the disclosures false, so long as the omitted detailed data does not render the top-line statements misleading; (2) a securities fraud action should not proceed based on allegations that a company should have used a different statistical methodology; (3) under Matrixx, once a company discloses some safety information, it need not disclose ALL safety information — only enough that what it said is not misleading.",
+      "key_quotes": {
+        "partial_disclosure_standard": "[A]s long as the omissions do not make the actual statements misleading, a company is not required to disclose every safety-related result from a clinical trial, even if the company discloses some safety-related results and even if investors would consider the omitted information significant.",
+        "matrixx_limits": "The Matrixx court made it clear that not all adverse events would be material and, more importantly, that not all material adverse events would have to be disclosed.",
+        "statistical_methodology": "Plaintiff's allegations of 'falsity' essentially are disagreements with the statistical methodology adopted by the doctors and scientists who designed and conducted the study."
+      },
+      "key_principles": [
+        "Top-line data disclosure is permissible — no obligation to disclose the full dataset at once",
+        "The test is NOT 'would investors want this information' — it is 'does the absence make actual statements misleading'",
+        "Challenges to statistical methodology do not support securities fraud claims",
+        "Under Matrixx, disclosing some safety data does not trigger obligation to disclose ALL safety data",
+        "BUT: if omitted data DOES make stated claims misleading, partial disclosure IS actionable"
+      ],
+      "important_caveat": "Rigel's defense SUCCEEDED because the court found the omitted details (blood pressure increases, country interaction) did not render the top-line claims misleading. This is distinguishable from cases where, e.g., a company leads with a post-hoc subgroup success while omitting that the primary endpoint failed (the Harkonen pattern). The key question is always: does what was left out make what was said misleading?",
+      "relevance_to_our_tool": "This case provides important calibration in BOTH directions. (1) The tool should NOT flag every omission from top-line data — companies can legitimately present top-line results first. (2) BUT the tool SHOULD flag when omitted data renders the top-line presentation misleading — e.g., claiming 'statistically significant efficacy' while omitting that the primary endpoint failed, or claiming 'well-tolerated' while omitting a 50% serious AE rate. The question is always whether the omitted facts make the stated claims misleading, not whether investors would want to know the omitted facts.",
+      "verified": true,
+      "verification_note": "Quotes verified via Cooley LLP (defense counsel) case analysis, ABA Litigation Section analysis, and multiple secondary legal sources. Cross-confirmed across 3+ independent sources."
+    }
+  ],
+  "enforcement_actions": [
+    {
+      "id": "clovis",
+      "name": "SEC v. Clovis Oncology, Inc.",
+      "citation": "SEC Litigation Release No. 24273 (September 18, 2018)",
+      "lit_release_url": "https://www.sec.gov/enforcement-litigation/litigation-releases/lr-24273",
+      "press_release_url": "https://www.sec.gov/newsroom/press-releases/2018-199",
+      "facts": {
+        "company": "Clovis Oncology",
+        "drug": "rociletinib (developmental EGFR-mutant NSCLC lung cancer drug)",
+        "what_they_said": "At the May 2015 ASCO conference, Clovis disclosed an objective response rate (ORR) of 60% for rociletinib. This figure was based on unconfirmed responses — interim tumor measurements not yet confirmed by follow-up scan per RECIST 1.1 criteria.",
+        "what_was_true": "Internal data by July 2015 showed actual efficacy was 42%. In November 2015, Clovis disclosed the confirmed ORR was 28% (ITT, 500mg dose) and 34% (625mg dose).",
+        "why_it_was_wrong": "Clovis counted unconfirmed tumor responses (shrinkage on a single scan) as 'responses.' The FDA standard (RECIST 1.1) requires confirmation on a subsequent scan. The company's own protocol called for confirmed ORR. Unconfirmed responses frequently do not hold up on confirmation.",
+        "where_it_was_said": "ASCO conference presentation (May 2015), public stock offering materials (July 2015 — raised $298 million)",
+        "stock_impact": "On November 2015 disclosure day, stock plunged over 70% from $99.43 to $30.24"
+      },
+      "penalty": {
+        "company": "$20 million civil penalty",
+        "ceo_patrick_mahaffy": "$250,000 civil penalty",
+        "cfo_erle_mast": "$100,000 civil penalty + $454,145 disgorgement and prejudgment interest",
+        "class_action": "Separate $142 million class action settlement",
+        "note": "All defendants settled without admitting or denying allegations"
+      },
+      "sec_quote": "Biopharma companies cannot mislead investors about efficacy results.",
+      "rule_for_our_tool": "When the S-1 presents efficacy metrics: (1) Does it define the metric? (2) Does the definition match FDA standards (e.g., RECIST confirmed vs unconfirmed)? (3) If using a non-standard metric (unconfirmed, per-protocol, subgroup), is this disclosed? (4) Does the reported rate match the protocol's pre-specified analysis population?",
+      "verified": true
+    },
+    {
+      "id": "harkonen_intermune",
+      "name": "United States v. Harkonen (InterMune / Actimmune)",
+      "citation": "510 Fed. App'x 633 (9th Cir. 2013), cert. denied 134 S.Ct. 824",
+      "facts": {
+        "company": "InterMune",
+        "drug": "Actimmune (interferon gamma-1b) for idiopathic pulmonary fibrosis (IPF)",
+        "trial": "GIPF-001 — Phase III randomized, double-blind, placebo-controlled trial, 330 patients",
+        "primary_endpoint": "Progression-free survival (PFS)",
+        "primary_endpoint_result": "FAILED — not statistically significant. Also failed all 10 secondary endpoints.",
+        "post_hoc_subgroup": "Patients with mild-to-moderate IPF (unblinded, not pre-specified, no multiplicity correction)",
+        "post_hoc_result": "4.8% treated died vs 16.4% placebo — 70% mortality reduction, p=0.004",
+        "subsequent_trial": "INSPIRE trial (826 patients, mild-to-moderate IPF) also FAILED — more patients died on drug (15%) than placebo (13%)",
+        "fraudulent_press_release_headline": "InterMune Announces Phase III Data Demonstrating Survival Benefit of Actimmune in IPF",
+        "fraudulent_press_release_subhead": "Reduces Mortality by 70% in Patients With Mild to Moderate Disease",
+        "ceo_quote_in_release": "Actimmune is the only available treatment demonstrated to have clinical benefit in IPF, with improved survival data in two controlled clinical trials. We believe these results will support use of Actimmune and lead to peak sales in the range of $400-$500 million per year, enabling us to achieve profitability in 2004.",
+        "evidence_of_intent": [
+          "Harkonen said he would 'cut that data and slice it until he got the kind of results he was looking for'",
+          "Prevented clinical and statistical staff from seeing the press release before issuance",
+          "Did not want the FDA to know about all post-hoc analyses because he 'didn't want to make it look like we were doing repeated analyses looking for a better result'",
+          "FDA medical officers told him they did not believe the data supported use of Actimmune in IPF"
+        ]
+      },
+      "penalty": {
+        "criminal": "Wire fraud conviction (September 29, 2009)",
+        "sentence": "3 years probation, 6 months home confinement, $20,000 fine, 200 hours community service",
+        "appeal": "9th Circuit affirmed (2013), Supreme Court denied cert",
+        "company_penalty": "InterMune paid nearly $37 million under deferred prosecution agreement (October 2006)",
+        "pardon": "Presidential pardon in 2021 (does not erase conviction or operate as determination of innocence)"
+      },
+      "rule_for_our_tool": "When the S-1 presents efficacy results, check: (1) Is the highlighted result from the primary endpoint or from a secondary/exploratory/post-hoc analysis? (2) If from a secondary or post-hoc analysis, is the primary endpoint result ALSO prominently disclosed? (3) Is the hierarchy (primary vs secondary vs post-hoc) clearly stated? (4) Is any subgroup analysis identified as pre-specified or post-hoc? Leading with a secondary/post-hoc success while burying a primary failure is the Harkonen pattern.",
+      "verified": true,
+      "verification_note": "Core facts verified across multiple sources including legal analyses, news coverage, and court filings. The exact p-value for the primary PFS endpoint (p=0.52 per research guide) was NOT confirmed in retrieved sources — the NEJM paper states 'not statistically significant' but exact p-value not extracted. Marked as UNVERIFIED for that specific value."
+    },
+    {
+      "id": "aveo_pharma",
+      "name": "SEC v. AVEO Pharmaceuticals",
+      "citation": "SEC Litigation Release No. 24062 (2018)",
+      "lit_release_url": "https://www.sec.gov/litigation/litreleases/2018/lr24062.htm",
+      "facts": {
+        "company": "AVEO Pharmaceuticals",
+        "drug": "Tivozanib (cancer drug candidate)",
+        "what_fda_recommended": "The FDA recommended that AVEO conduct an additional clinical trial before filing for approval, raising concerns about the existing data package.",
+        "what_aveo_disclosed": "AVEO disclosed positive aspects of FDA interactions, including the existence of a pre-NDA meeting and favorable characterizations of the regulatory pathway.",
+        "the_asymmetry": "AVEO selectively disclosed positive FDA interactions while omitting the FDA's recommendation for an additional trial — the most material piece of FDA feedback. This created a misleadingly optimistic picture of the regulatory outlook.",
+        "stock_impact": "When the negative FDA feedback eventually became known, the stock price declined significantly."
+      },
+      "rule_for_our_tool": "Selective disclosure of FDA communications is actionable. If the S-1 describes any FDA interaction (alignment meetings, positive feedback, breakthrough therapy designation, fast track, pre-IND meeting), ALL material FDA interactions must be disclosed, including concerns, additional study requests, and negative decisions. The tool should flag any S-1 that mentions positive FDA interactions without also disclosing any known negative FDA feedback.",
+      "verified": true,
+      "verification_note": "Core facts verified from SEC litigation release URL and secondary legal analyses. Exact SEC complaint language not extracted due to access limitations."
+    }
+  ],
   "comment_letter_topics": []
 }
