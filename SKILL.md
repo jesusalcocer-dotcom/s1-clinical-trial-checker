@@ -833,103 +833,689 @@ in Steps 1-2 rise to the level of genuine legal concern.
 **Read**: `reference/guardrails.json` for exact procedures, table
 formats, and calibration language.
 
-### Rule 408 Pattern Analysis
+---
 
-**What this tests and why:** Rule 408 (17 C.F.R. § 230.408) requires
-that the S-1 not be misleading. Individual omissions may each be
-borderline. But if every omission favors the company, the cumulative
-pattern itself is the problem. (See D.2 — this is the completeness
-standard in action across all findings.)
+### ESCALATION TEST 1: Omnicare Opinion Test
 
-Present the full analysis in chat:
+**Source:** *Omnicare, Inc. v. Laborers District Council*, 575 U.S.
+175 (2015) (Justice Kagan, 7-0 on relevant holding).
+
+**What this tests:** Whether opinion statements in the S-1 create
+Section 11 liability — not because the opinion is wrong, but because
+(a) it embeds a false factual claim, or (b) it omits known contrary
+facts that conflict with the impression it creates.
+
+**Why it matters here:** Biotech S-1s are full of opinion statements:
+"well-tolerated," "demonstrated clinical activity," "promising
+results," "aligned with the FDA." The Supreme Court held that these
+can create strict liability even if the company genuinely believes
+them, if the S-1 fails to disclose facts the company knows that
+undermine the impression.
+
+**Key language from the Court:**
+- "A reasonable investor does not expect that every opinion in a
+  registration statement is correct; opinions, after all, are
+  inherently uncertain." (limiting principle)
+- "[A]n investor... expects not just that the issuer believes the
+  opinion (however irrationally), but that it fairly aligns with the
+  information in the issuer's possession at the time."
+- "[I]f a registration statement omits material facts about the
+  issuer's inquiry into or knowledge concerning a statement of
+  opinion, and if those facts conflict with what a reasonable
+  investor would take from the statement itself, then § 11's
+  omissions clause creates liability."
+
+**Important limitation from *Tongue v. Sanofi*, 816 F.3d 199 (2d
+Cir. 2016):** "Omnicare does not impose liability merely because an
+issuer failed to disclose information that ran counter to an opinion
+expressed in the registration statement." Not every fact cutting
+against an opinion must be disclosed — only facts creating a
+meaningful conflict between the opinion and reality.
+
+#### Decision Tree
+
+For each opinion statement flagged in Steps 1-2, execute the
+following tree in order. Display every step in the chat.
+
+```
+OMNICARE DECISION TREE
+
+INPUT: Each opinion flagged in Steps 1-2 (from Red Flag Phrases,
+  Preclinical Framing, FDA Communications, Endpoint Hierarchy,
+  Safety Data Match, or Data Maturity checks)
+
+┌─────────────────────────────────────────────────┐
+│ NODE 1: IDENTIFY THE OPINION AND ITS IMPRESSION │
+└─────────────┬───────────────────────────────────┘
+              │
+  What is the exact S-1 statement?
+  What impression does it create for a reasonable investor?
+  Example: "ARD-101 was well-tolerated" → impression: the safety
+  profile is acceptable for the indication.
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 2: TEST 1 — EMBEDDED FACTS                 │
+│ "Does this opinion embed a factual claim?"      │
+└─────────────┬───────────────────────────────────┘
+              │
+  Every opinion affirms at least one fact: that the speaker
+  actually holds the belief. But some opinions embed additional
+  verifiable factual claims.
+              │
+  Question: Does this opinion imply that the company HAS DATA
+  supporting the characterization?
+              │
+  ├── YES → What data? Is it in the S-1?
+  │         Does the data from CTgov/Steps 1-2 SUPPORT or
+  │         CONTRADICT the embedded claim?
+  │         │
+  │         ├── DATA SUPPORTS → Embedded fact is TRUE
+  │         │   → Continue to Node 3
+  │         │
+  │         ├── DATA CONTRADICTS → Embedded fact is FALSE
+  │         │   → FLAG: "The opinion embeds a factual claim
+  │         │     that [X]. The data shows [Y], contradicting
+  │         │     the embedded claim."
+  │         │   → Severity: SIGNIFICANT RISK
+  │         │   → Continue to Node 3 for additional exposure
+  │         │
+  │         └── DATA UNAVAILABLE → Cannot verify
+  │             → Note: "Embedded factual claim cannot be
+  │               verified from available sources."
+  │             → Continue to Node 3
+  │
+  └── NO → Pure opinion with no embedded factual claim
+          → Continue to Node 3
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 3: TEST 2 — OMITTED CONTRARY FACTS         │
+│ "Does the company know facts that cut against   │
+│  the impression this opinion creates?"          │
+└─────────────┬───────────────────────────────────┘
+              │
+  List every contrary fact found in Steps 1-2:
+  - Failed primary endpoints (from Endpoint Hierarchy check)
+  - High AE/SAE rates (from Safety Data Match)
+  - Unposted results (from FDAAA 801)
+  - Negative FDA interactions (from FDA Communications)
+  - Design limitations: open-label, single-arm, small N
+  - Discrepancies between S-1 claims and CTgov data
+              │
+  ├── NO contrary facts found
+  │   → NO CONCERN for this test
+  │   → Continue to Node 4
+  │
+  ├── Contrary facts found BUT disclosed near the opinion
+  │   → LOW RISK: "Contrary facts are disclosed, reducing
+  │     the omission risk."
+  │   → Continue to Node 4
+  │
+  ├── Contrary facts found, disclosed only in Risk Factors
+  │   (not near the opinion in Summary/Business sections)
+  │   → MODERATE RISK: "Contrary facts are disclosed but
+  │     segregated in Risk Factors, not adjacent to the
+  │     opinion statement in [section]. This asymmetric
+  │     placement may create a misleading impression per
+  │     Omnicare's 'fairly aligns' standard."
+  │   → Continue to Node 4
+  │
+  └── Contrary facts found, NOT disclosed anywhere
+      → SIGNIFICANT RISK: "The S-1 states [opinion] while
+        the company's own data shows [contrary facts].
+        These contrary facts are not disclosed in the S-1.
+        Under Omnicare, the omission of these facts makes
+        the opinion statement potentially misleading."
+      → Continue to Node 4
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 4: "FAIRLY ALIGNS" STANDARD                │
+│ "Does the opinion fairly align with the         │
+│  information in the issuer's possession?"       │
+└─────────────┬───────────────────────────────────┘
+              │
+  The Court held a reasonable investor "expects not just that
+  the issuer believes the opinion (however irrationally), but
+  that it fairly aligns with the information in the issuer's
+  possession at the time."
+              │
+  Consider the totality of what the company knows:
+  - All trial data (including unpublished results)
+  - All FDA communications (including denials)
+  - All safety data (including SAEs)
+  - Design limitations they are aware of
+              │
+  ├── Opinion FAIRLY ALIGNS with known information
+  │   → NO CONCERN on this test
+  │
+  ├── Opinion is PARTIALLY misaligned
+  │   → MODERATE RISK: "The opinion partially aligns but
+  │     omits material context that would alter the
+  │     impression."
+  │
+  └── Opinion does NOT fairly align
+      → SIGNIFICANT RISK: "There is a meaningful conflict
+        between the opinion and the facts in the issuer's
+        possession."
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 5: LIMITING PRINCIPLE / TONGUE v. SANOFI   │
+│ "Is this normal corporate optimism, or would    │
+│  it genuinely mislead a reasonable investor?"   │
+└─────────────┬───────────────────────────────────┘
+              │
+  Apply the Omnicare limiting principle and the Tongue v.
+  Sanofi calibration:
+              │
+  Questions to ask:
+  - Would a reasonable retail IPO investor be misled?
+    (Note: Tongue involved sophisticated CVR holders;
+    biotech IPO investors are typically less sophisticated)
+  - Is the contrary information publicly available?
+    (CTgov data is public; internal FDA communications
+    may not be)
+  - Is this a genuine conflict or merely a "dispute about
+    the proper interpretation of data"? (Tongue)
+  - How specific is the contrary fact? A general risk vs.
+    a specific failed endpoint or high SAE rate?
+              │
+  ├── Limiting principle APPLIES — normal optimism
+  │   → Reduce severity by one level
+  │   → Note: "Limiting principle: this appears to be
+  │     [normal corporate optimism / dispute about data
+  │     interpretation] rather than a meaningful omission."
+  │
+  └── Limiting principle does NOT apply
+      → Maintain severity from Nodes 2-4
+      → Note: "The contrary facts are specific and material
+        (not merely general risks), and the conflict between
+        the opinion and reality is concrete."
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 6: FINAL DETERMINATION                     │
+└─────────────────────────────────────────────────┘
+
+  Aggregate findings from Nodes 2-5:
+
+  SIGNIFICANT RISK: Two or more tests triggered with specific
+    contrary facts. The opinion embeds a false claim AND/OR
+    omits material contrary facts not disclosed anywhere.
+    Limiting principle does not apply.
+
+  MODERATE RISK: One test triggered, OR contrary facts are
+    disclosed but in asymmetric sections, OR limiting
+    principle partially applies.
+
+  LOW RISK: Tests triggered but contrary facts are disclosed
+    nearby, OR the conflict is about data interpretation
+    rather than omission.
+
+  NO CONCERN: No tests triggered. Opinion appears supported
+    by available data.
+```
+
+#### Output Format (display in chat)
+
+For EACH opinion tested, show the full tree traversal:
+
+```
+### Omnicare Opinion Test — "[Statement]"
+
+**S-1 Statement:**
+> "[EXACT quote]" — Section: [name], Page: ~[page]
+
+**Impression Created:** [What a reasonable investor would take
+from this statement]
+
+**Node 2 — Embedded Facts:**
+Does this opinion embed a factual claim? [Yes/No]
+Embedded claim: [description]
+Data from Steps 1-2: [what the data actually shows]
+Result: [Supported / Contradicted / Unavailable]
+
+**Node 3 — Omitted Contrary Facts:**
+Contrary facts found in Steps 1-2:
+  1. [Specific fact — from which check]
+  2. [Specific fact — from which check]
+Disclosure status: [Not disclosed / Disclosed in Risk Factors
+  only / Disclosed adjacent to opinion]
+
+**Node 4 — Fairly Aligns?**
+[Does the opinion fairly align with what the company knows?
+Analysis with specific references to data.]
+
+**Node 5 — Limiting Principle:**
+[Does this trigger the Omnicare/Tongue limiting principle?
+Why or why not?]
+
+**Determination:** [SIGNIFICANT RISK / MODERATE RISK / LOW RISK
+/ NO CONCERN]
+[2-3 sentence explanation connecting the specific test results
+to the determination.]
+```
+
+---
+
+### ESCALATION TEST 2: Rule 408 Pattern Analysis
+
+**Source:** Rule 408 (17 C.F.R. § 230.408): "In addition to the
+information expressly required to be included in a registration
+statement, there shall be added such further material information,
+if any, as may be necessary to make the required statements, in the
+light of the circumstances under which they are made, not misleading."
+
+**What this tests:** Whether the individual ⚠ and ✗ findings from
+Steps 1-2, taken collectively, form a pattern of one-sided disclosure
+that systematically favors the company.
+
+**Why it matters:** Each individual finding might survive scrutiny
+alone — a single missing caveat, one endpoint not mentioned, one
+instance of "well-tolerated" without nearby data. But if every
+single gap, omission, and characterization choice makes the drug
+look better than the data supports, that cumulative pattern is
+itself the problem under Rule 408. The S-1 becomes misleading not
+because of any one statement, but because the totality of choices
+paints a picture more favorable than reality.
+
+**Supporting framework from TSC Industries:** The "total mix"
+standard — each omission must be evaluated for "whether it
+significantly altered the total mix of information made available."
+A single omission might not alter the total mix. Ten omissions all
+in the same direction almost certainly do.
+
+#### Decision Tree
+
+```
+RULE 408 PATTERN DECISION TREE
+
+INPUT: Every ⚠ and ✗ finding from Steps 1-2
+
+┌─────────────────────────────────────────────────┐
+│ NODE 1: BUILD THE FINDINGS TABLE                │
+└─────────────┬───────────────────────────────────┘
+              │
+  List EVERY ⚠ and ✗ finding from Steps 1-2.
+  For each finding, record:
+  - The finding (what was flagged)
+  - The omission or gap (what is missing or misleading)
+  - The source check (which check produced it)
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 2: CLASSIFY DIRECTION                      │
+│ For each finding: does the omission/gap FAVOR   │
+│ THE COMPANY, is it NEUTRAL, or does it          │
+│ DISFAVOR THE COMPANY?                           │
+└─────────────┬───────────────────────────────────┘
+              │
+  FAVORS COMPANY = the omission or characterization makes
+    the drug look better than the data supports. Examples:
+    - Omitting a failed endpoint
+    - Using "well-tolerated" without disclosing SAE rate
+    - Putting positive FDA news in Business, negative
+      only in Risk Factors
+    - Not disclosing trial was open-label or single-arm
+    - Leading with secondary endpoints (Harkonen pattern)
+    - Using unconfirmed response rates (Clovis pattern)
+              │
+  NEUTRAL = the gap doesn't clearly favor either direction.
+    Examples:
+    - Missing dosage information
+    - Incomplete enrollment data
+    - Risk Factors section mentions general clinical risks
+              │
+  DISFAVORS COMPANY = overcautious disclosure (rare).
+    Examples:
+    - Extra caveats beyond what SEC requires
+    - Highlighting risks that other companies don't disclose
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 3: SECTION PLACEMENT CHECK                 │
+│ Are favorable items in prominent sections while │
+│ caveats are only in Risk Factors?               │
+└─────────────┬───────────────────────────────────┘
+              │
+  Check the section placement of ALL flagged items:
+              │
+  ├── Positive characterizations in Summary/Business
+  │   AND negative facts only in Risk Factors
+  │   → FLAG: "Asymmetric section placement. Favorable
+  │     claims appear in [Summary/Business] while caveats
+  │     and contrary data appear only in Risk Factors."
+  │   → Add as a FAVORS COMPANY finding
+  │
+  ├── Positive and negative information in same sections
+  │   → No placement asymmetry
+  │
+  └── Cannot determine (e.g., if S-1 structure is unusual)
+      → Note and continue
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 4: ENFORCEMENT PATTERN MATCHING            │
+│ Does the pattern resemble known enforcement     │
+│ actions?                                        │
+└─────────────┬───────────────────────────────────┘
+              │
+  Compare the direction-classified findings against
+  three known enforcement patterns:
+              │
+  CLOVIS PATTERN (inflated metrics):
+    Does the S-1 present efficacy data using definitions
+    or thresholds that make results appear stronger than
+    the CTgov-standard definitions? (E.g., unconfirmed vs.
+    confirmed response rates, post-hoc vs. pre-specified
+    analyses, surrogate vs. primary endpoints)
+    → IF match: "The pattern of presenting [X] using
+      non-standard definitions raises questions similar
+      to SEC v. Clovis Oncology (LR-24273, 2018), where
+      reporting unconfirmed response rates as if confirmed
+      resulted in a $20M penalty."
+              │
+  HARKONEN PATTERN (buried primary, promoted secondary):
+    Does the S-1 lead with secondary or exploratory
+    results while the primary endpoint is mentioned later
+    or not at all?
+    → IF match: "The pattern of leading with [secondary
+      result] while [burying/omitting] the primary
+      endpoint raises questions similar to United States
+      v. Harkonen (9th Cir. 2013), where this pattern
+      resulted in a criminal wire fraud conviction."
+              │
+  AVEO PATTERN (selective FDA disclosure):
+    Does the S-1 highlight positive FDA interactions
+    while omitting negative ones?
+    → IF match: "The pattern of disclosing [positive FDA
+      interaction] while omitting [negative FDA interaction]
+      raises questions similar to SEC v. AVEO Pharmaceuticals
+      (LR-24062, 2018), where selective FDA disclosure
+      resulted in fraud charges."
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 5: CALCULATE ONE-SIDEDNESS                 │
+└─────────────┬───────────────────────────────────┘
+              │
+  Count: Total findings = [n]
+         Favors company = [n]
+         Neutral = [n]
+         Disfavors company = [n]
+              │
+  Percentage = favors_company / total_findings
+              │
+  ├── < 50% → No pattern detected
+  │   → ✓ Adequate: "No systematic pattern of one-sided
+  │     disclosure. Findings appear distributed across
+  │     directions."
+  │
+  ├── 50-75% → Possible pattern
+  │   → ⚠ Attention Area: "A possible pattern of one-sided
+  │     disclosure exists. [X] of [Y] findings favor the
+  │     company. This warrants attorney awareness but may
+  │     be explained by the normal structure of disclosure
+  │     documents."
+  │   → Proceed to Node 6 for LLM assessment
+  │
+  ├── > 75% → Likely pattern
+  │   → ✗ Significant Concern: "A likely pattern of
+  │     systematic one-sided disclosure exists. [X] of [Y]
+  │     findings favor the company. Under Rule 408, this
+  │     pattern raises questions about whether the S-1's
+  │     clinical disclosures, taken as a whole, are
+  │     misleading."
+  │   → Proceed to Node 6 for LLM assessment
+  │
+  └── Fewer than 3 total findings → Insufficient data
+      → Note: "Too few findings for meaningful pattern
+        analysis."
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 6: LLM HOLISTIC ASSESSMENT (if ⚠ or ✗)    │
+│ "Taken as a whole, do the omissions create a    │
+│  misleadingly optimistic picture?"              │
+└─────────────────────────────────────────────────┘
+
+  Feed the LLM:
+  - The complete findings table with direction classifications
+  - Any enforcement pattern matches from Node 4
+  - The section placement analysis from Node 3
+  - This prompt:
+
+  "You are applying Rule 408 (17 C.F.R. § 230.408) to the
+  following findings from an S-1 analysis. Rule 408 requires
+  that the S-1 include 'such further material information as
+  may be necessary to make the required statements not
+  misleading.'
+
+  [findings table]
+
+  [enforcement pattern matches]
+
+  Question: Taken as a whole, would a reasonable investor
+  reading only this S-1 come away with a view of the clinical
+  program that is MORE FAVORABLE than the source data supports?
+  Consider the TSC Industries 'total mix' standard — do these
+  omissions, collectively, 'significantly alter the total mix
+  of information made available'?
+
+  Respond with: PATTERN CONFIRMED / POSSIBLE PATTERN / NO
+  PATTERN, with specific reasoning."
+```
+
+#### Output Format (display in chat)
 
 ```
 ### Rule 408 Pattern Analysis
 
 **Legal Standard:**
-Rule 408 (17 C.F.R. § 230.408): "[Full text from reference files]"
+Rule 408 (17 C.F.R. § 230.408): "In addition to the information
+expressly required to be included in a registration statement, there
+shall be added such further material information, if any, as may be
+necessary to make the required statements, in the light of the
+circumstances under which they are made, not misleading."
 
-**Findings Table:**
+**Node 2 — Findings Direction Table:**
 | Finding | Omission/Gap | Direction | Source Check |
 |---------|-------------|-----------|-------------|
-[Classify each ⚠/✗ finding: FAVORS COMPANY / NEUTRAL / DISFAVORS COMPANY]
+[All ⚠/✗ findings classified]
 
-**Calculation:**
-[n] findings total, [n] favor company = [pct]%
-Threshold: <50% ✓ Adequate | 50-75% ⚠ Attention | >75% ✗ Concern
+**Node 3 — Section Placement:**
+[Analysis of where positive vs. negative information appears]
 
-**LLM Assessment** (if ⚠ or ✗):
-Prompt: [show the filled-in Rule 408 prompt]
-Response: [full LLM response]
+**Node 4 — Enforcement Pattern Matching:**
+[Any matches to Clovis, Harkonen, or AVEO patterns]
+
+**Node 5 — One-Sidedness Calculation:**
+[n] findings total | [n] favor company | [n] neutral | [pct]%
+Threshold result: [No pattern / Possible / Likely]
+
+**Node 6 — Holistic Assessment:**
+[Full LLM prompt and response, if triggered]
 
 **Determination:** [✓/⚠/✗]
-[Reasoned explanation]
+[Reasoned explanation with specific Rule 408 language]
 ```
 
-### Omnicare Opinion Test
+---
 
-**What this tests and why:** As explained in D.5, the Supreme Court
-held in *Omnicare v. Laborers* (2015) that opinion statements in an
-S-1 can create strict liability if they (a) embed false factual
-claims or (b) omit known contrary facts. This test applies to each
-opinion statement flagged in Steps 1-2 — statements like "well-
-tolerated," "demonstrated clinical activity," or "promising results."
+### ESCALATION TEST 3: Matrixx Defense Blocker
 
-For each flagged opinion statement, present in chat:
+**Source:** *Matrixx Initiatives, Inc. v. Siracusano*, 563 U.S. 27
+(2011) (Justice Sotomayor, unanimous 9-0).
+
+**What this is:** Not a check that produces a finding. It is a
+**shield** that protects findings from Steps 1-2 from being
+dismissed on statistical significance grounds.
+
+**Why it matters:** When a finding involves data from a small trial
+(N=12, N=19, N=40), the natural defense is: "The sample was too
+small for statistical significance, so it doesn't matter." The
+Supreme Court unanimously rejected this argument. Information can be
+material to a reasonable investor even without reaching p<0.05.
+
+**Key language from the Court:**
+- "Matrixx's argument rests on the premise that statistical
+  significance is the only reliable indication of causation. This
+  premise is flawed."
+- "A lack of statistically significant data does not mean that
+  medical experts have no reliable basis for inferring a causal
+  link between a drug and adverse events."
+- "Medical professionals and researchers do not limit the data they
+  consider to the results of randomized clinical trials or to
+  statistically significant evidence."
+- "Given that medical professionals and regulators act on the basis
+  of evidence of causation that is not statistically significant,
+  it stands to reason that in certain cases reasonable investors
+  would as well."
+
+**Important limitation from *In re Rigel Pharmaceuticals*, 697 F.3d
+869 (9th Cir. 2012):** Matrixx does not mean every data point from
+every small trial is automatically material. Rigel established that:
+- Partial disclosure of top-line data is permissible
+- Not all adverse events must be disclosed — only those whose
+  omission makes stated claims misleading
+- The TSC Industries "total mix" test still applies
+- "The Matrixx court made it clear that not all adverse events
+  would be material and, more importantly, that not all material
+  adverse events would have to be disclosed."
+
+The key question from Rigel: **does what was left out make what was
+said misleading?**
+
+#### Decision Tree
 
 ```
-### Omnicare Opinion Test — "[Short description of statement]"
+MATRIXX DEFENSE BLOCKER DECISION TREE
 
-**Legal Standard:**
-Omnicare, Inc. v. Laborers District Council, 575 U.S. 175 (2015):
-- Test 1 (Embedded Facts): "[exact quote from reference]"
-- Test 2 (Omitted Contrary Facts): "[exact quote from reference]"
-- Limiting Principle: "[exact quote from reference]"
+INPUT: Every ⚠ and ✗ finding from Steps 1-2 that involves
+  clinical trial data
 
-**S-1 Opinion Statement:**
-> "[EXACT S-1 text]" — Section: [name], Page: ~[page]
-
-**Known Contrary Facts:**
-[List specific contrary facts found in Steps 1-2 — CTgov data,
-missing endpoints, SAEs, etc.]
-
-**Three-Part Test:**
-- Test 1 (Embedded Facts): [Does this opinion embed a factual claim?
-  Is that claim supported by the data we found? Analysis...]
-- Test 2 (Omitted Contrary Facts): [What facts cut against this
-  opinion? Are they disclosed in the S-1? Analysis...]
-- Limiting Principle: [Is this normal corporate optimism, or would
-  it mislead a reasonable investor? Analysis...]
-
-**Determination:** [SIGNIFICANT RISK / MODERATE RISK / LOW RISK / NO CONCERN]
-[Reasoned explanation]
+┌─────────────────────────────────────────────────┐
+│ NODE 1: IDENTIFY VULNERABLE FINDINGS            │
+│ Which findings could be challenged on            │
+│ statistical significance grounds?               │
+└─────────────┬───────────────────────────────────┘
+              │
+  For each ⚠/✗ finding, ask:
+  - Does this involve data from a small trial (N<50)?
+  - Does this involve adverse events that may not have
+    reached statistical significance?
+  - Does this involve a missed endpoint where p>0.05?
+  - Could a defense argue this is immaterial because the
+    underlying data "isn't significant"?
+              │
+  ├── Finding involves small-N or non-significant data
+  │   → This finding is VULNERABLE to a statistical
+  │     significance defense
+  │   → Proceed to Node 2
+  │
+  └── Finding does not involve statistical significance
+      → Defense blocker not applicable
+      → Skip this finding
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 2: APPLY MATRIXX SHIELD                    │
+│ "Does Matrixx block the defense?"               │
+└─────────────┬───────────────────────────────────┘
+              │
+  For each vulnerable finding:
+              │
+  Question 1: Would a medical professional act on this data?
+  - A 50% SAE rate in 12 patients → YES, doctors act on this
+  - A single AE report in 200 patients → MAYBE NOT
+  - A missed primary endpoint (p=0.12) in 40 patients → YES
+              │
+  Question 2: Would a reasonable investor want to know?
+  - Apply TSC Industries: "a substantial likelihood that a
+    reasonable shareholder would consider it important"
+  - Consider the seriousness of what was found
+  - Consider the biological plausibility
+  - Consider the number of reports/events
+              │
+  ├── BOTH answers YES → Matrixx APPLIES
+  │   → "Under Matrixx, the materiality of [finding] does
+  │     not depend on statistical significance. [Reasoning:
+  │     medical professionals would act on X; a reasonable
+  │     investor would want to know Y.]"
+  │   → Finding is PROTECTED from dismissal
+  │
+  ├── Mixed answers → Matrixx MAY APPLY
+  │   → "Matrixx may protect this finding from a statistical
+  │     significance defense, but the TSC Industries 'total
+  │     mix' analysis suggests [reasoning]."
+  │   → Proceed to Node 3
+  │
+  └── BOTH answers NO or UNCLEAR → Matrixx may not reach
+      → Proceed to Node 3
+              │
+              ▼
+┌─────────────────────────────────────────────────┐
+│ NODE 3: APPLY RIGEL LIMITATION                  │
+│ "Does the Rigel partial-disclosure framework    │
+│  cabin the Matrixx protection?"                 │
+└─────────────────────────────────────────────────┘
+              │
+  Rigel holds that even under Matrixx, a company that
+  discloses top-line safety data is not required to disclose
+  every safety-related result. The question is: does the
+  omitted data render the STATED DATA misleading?
+              │
+  ├── Omitted data DOES make stated claims misleading
+  │   (e.g., S-1 says "well-tolerated" but omits 48%
+  │   Grade 3+ AEs — the stated claim is misleading)
+  │   → Rigel does NOT cabin Matrixx here
+  │   → Finding remains PROTECTED
+  │   → "The omission renders the stated safety
+  │     characterization misleading, distinguishing this
+  │     from Rigel's partial-disclosure safe harbor."
+  │
+  ├── Omitted data does NOT make stated claims misleading
+  │   (e.g., company disclosed top-line safety; omitted
+  │   granular AE breakdown that is consistent with
+  │   top-line characterization)
+  │   → Rigel DOES cabin Matrixx
+  │   → Finding has REDUCED protection
+  │   → "Under Rigel, partial disclosure of top-line data
+  │     is permissible where the omitted details are
+  │     consistent with the top-line characterization."
+  │
+  └── Cannot determine
+      → Note both possibilities and flag for attorney
 ```
 
+#### Output Format (display in chat)
+
+```
 ### Matrixx Defense Blocker
 
-**What this tests and why:** As explained in D.5, the Supreme Court
-in *Matrixx v. Siracusano* (2011) held there is no bright-line
-statistical significance threshold for materiality. This is not a
-separate "check" — it is a shield that prevents dismissing findings
-from Steps 1-2 on the grounds that trial data wasn't statistically
-significant or that sample sizes were too small.
-
-```
-### Matrixx Defense Blocker
-
 **Legal Standard:**
-Matrixx Initiatives v. Siracusano, 563 U.S. 27 (2011):
-"[Exact holding — no bright-line statistical significance threshold]"
+Matrixx Initiatives v. Siracusano, 563 U.S. 27 (2011) (unanimous):
+"A lack of statistically significant data does not mean that medical
+experts have no reliable basis for inferring a causal link between a
+drug and adverse events."
 
-**Application to this S-1:**
-[For each finding where statistical significance or sample size
-could be raised as a defense, explain:
-- What the finding is
-- Why a "not significant" defense might be attempted
-- Why Matrixx blocks that defense]
+Limitation — In re Rigel Pharmaceuticals, 697 F.3d 869 (9th Cir.
+2012): "As long as the omissions do not make the actual statements
+misleading, a company is not required to disclose every safety-
+related result from a clinical trial."
 
-**Conclusion:** [Which findings, if any, are protected from dismissal
-by Matrixx]
+**Findings Protected by Matrixx:**
+
+| Finding | Sample/Data | Defense Blocked | Rigel Check | Status |
+|---------|-------------|----------------|-------------|--------|
+[For each vulnerable finding: what it is, the statistical
+argument against it, whether Matrixx blocks that argument,
+and whether Rigel cabins the protection]
+
+**Conclusion:** [Which findings are shielded from statistical
+significance dismissal, and which are not]
 ```
 
 ---
