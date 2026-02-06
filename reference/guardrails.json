@@ -1,0 +1,138 @@
+{
+  "rule_408_pattern_test": {
+    "legal_basis_id": "rule_408",
+    "legal_basis_citation": "17 C.F.R. § 230.408",
+    "question": "Looking at ALL findings together, do the omissions and de-emphases consistently favor the company?",
+    "procedure": [
+      "Step 1: List every omission, gap, and de-emphasis identified in Pass 1 and Pass 2",
+      "Step 2: For each, mark direction: FAVORS COMPANY / NEUTRAL / DISFAVORS COMPANY",
+      "Step 3: If >75% of omissions favor the company, flag as PATTERN",
+      "Step 4: Specifically check: (a) Are favorable results emphasized while unfavorable results are omitted? (b) Are positive characterizations in prominent sections (Summary, Business) while caveats are in Risk Factors? (c) Are design limitations (small N, open-label, single-arm) undisclosed?",
+      "Step 5: Cross-reference with enforcement precedents — does the pattern resemble Clovis (inflated metrics), Harkonen (leading with post-hoc results), or AVEO (selective FDA disclosure)?"
+    ],
+    "output_table_format": {
+      "columns": ["#", "Finding", "Direction", "Pass/Check Source"],
+      "example_rows": [
+        ["1", "Primary endpoint not met (NCT05121441) — not discussed in S-1", "Favors company", "Pass 2 / Endpoints"],
+        ["2", "50% serious adverse event rate — characterized as 'well-tolerated'", "Favors company", "Pass 2 / Safety"],
+        ["3", "Trial was single-arm, open-label — not disclosed", "Favors company", "Pass 2 / Trial Design"],
+        ["4", "Breakthrough Therapy Designation mentioned — BTD denial not mentioned", "Favors company", "Pass 1 / FDA Communications"],
+        ["5", "Risk Factors section mentions general clinical trial risks", "Neutral", "Pass 1 / Basic Disclosure"]
+      ]
+    },
+    "pattern_thresholds": {
+      "no_pattern": "Fewer than 50% of findings favor the company, or total findings < 3",
+      "possible_pattern": "50-75% of findings favor the company — note as observation, not conclusion",
+      "likely_pattern": ">75% of findings favor the company — flag for attorney review"
+    },
+    "calibration": {
+      "say_this": "The pattern of omissions raises questions under Rule 408 (17 C.F.R. § 230.408), which requires disclosure of information necessary to make other statements not misleading. [X] of [Y] identified omissions favor the company. Attorney review is recommended.",
+      "not_this": "This filing is materially deficient under Rule 408.",
+      "why": "Rule 408 pattern analysis requires holistic judgment about the 'total mix' of information. The tool can identify the pattern, but the ultimate legal assessment requires consideration of defenses, context, and materiality weighting that only an attorney can perform."
+    },
+    "supporting_case_law": [
+      {
+        "id": "tsc_industries",
+        "relevance": "The 'total mix' standard from TSC Industries is the foundation for Rule 408 pattern analysis. Each individual omission must be evaluated for whether it 'significantly altered the total mix of information.'"
+      },
+      {
+        "id": "rigel_pharma",
+        "relevance": "Rigel establishes that partial disclosure of trial data is permissible IF the omissions do not render stated claims misleading. The Rule 408 pattern test asks: looking at ALL the partial disclosures together, does the cumulative effect mislead?"
+      }
+    ]
+  },
+
+  "omnicare_opinion_test": {
+    "legal_basis_id": "omnicare",
+    "legal_basis_citation": "575 U.S. 175 (2015)",
+    "question": "For each opinion statement flagged in the analysis, does it raise questions under the Omnicare three-part test?",
+    "procedure": [
+      "Step 1: Identify all opinion statements flagged during analysis (safety characterizations like 'well-tolerated,' efficacy claims like 'demonstrated clinical activity,' regulatory characterizations like 'aligned with the FDA')",
+      "Step 2: For each, apply Test 1 (Sincerity): Does the company actually believe this opinion? (Usually assumed unless there is direct contrary evidence)",
+      "Step 3: For each, apply Test 2 (Embedded Facts): Does this opinion embed a factual claim? If so, is the embedded fact supported by the ClinicalTrials.gov data or other available evidence?",
+      "Step 4: For each, apply Test 3 (Omitted Contrary Facts / Misleading by Omission): Does the company know facts that cut against the impression this opinion creates? List the specific contrary facts from ClinicalTrials.gov data or the S-1 itself.",
+      "Step 5: Apply the 'fairly aligns' standard: Does this opinion 'fairly align with the information in the issuer's possession at the time'?",
+      "Step 6: Apply the 'meaningful inquiry' test: Does this opinion imply an inquiry or evaluation that is stronger than what actually occurred?",
+      "Step 7: If any test is triggered, flag as RISK AREA with specific explanation"
+    ],
+    "output_table_format": {
+      "columns": ["Statement", "Impression Created", "Test 2 (Embedded Fact)", "Test 3 (Contrary Facts)", "Fairly Aligns?", "Risk Level"],
+      "color_coding": {
+        "green": "No tests triggered — opinion appears supported by available data",
+        "yellow": "One test triggered — moderate risk, context may justify",
+        "red": "Two or more tests triggered — significant risk area requiring attorney review"
+      },
+      "example_rows": [
+        {
+          "statement": "'The drug was well-tolerated'",
+          "impression": "Safety profile is acceptable for the indication",
+          "test_2": "Embeds factual claim that AE data supports characterization. ClinicalTrials.gov shows 48% Grade 3+ AEs — TRIGGERED",
+          "test_3": "Company knows about high SAE rate from its own trial. This cuts against 'well-tolerated' — TRIGGERED",
+          "fairly_aligns": "No — 48% Grade 3+ AEs does not fairly align with 'well-tolerated'",
+          "risk_level": "RED"
+        },
+        {
+          "statement": "'We believe our regulatory strategy is well-positioned'",
+          "impression": "FDA interactions have been generally positive",
+          "test_2": "Embeds claim that regulatory interactions support optimism. No direct contrary evidence from ClinicalTrials.gov",
+          "test_3": "Tool cannot assess what FDA feedback the company has received unless disclosed elsewhere — CANNOT EVALUATE",
+          "fairly_aligns": "Cannot determine without access to FDA communications",
+          "risk_level": "YELLOW (insufficient data to evaluate)"
+        }
+      ]
+    },
+    "calibration": {
+      "say_this": "This characterization raises questions under Omnicare, Inc. v. Laborers District Council, 575 U.S. 175 (2015), because [specific test triggered and why]. The opinion [embeds a factual claim that / omits contrary facts about / implies an inquiry that] [specific issue]. Attorney review is recommended.",
+      "not_this": "This statement fails the Omnicare test. / This statement violates Omnicare. / This is a Section 11 violation.",
+      "why": "Omnicare liability depends on what a 'reasonable investor' would understand and what the company 'knew' — determinations that require full factual investigation beyond what the tool can perform. The tool identifies RISK AREAS, not legal conclusions. Many S-1 opinion statements that trigger the three-part test may ultimately be defensible in context."
+    },
+    "important_limiting_principle": {
+      "source": "Omnicare, 575 U.S. 175 (2015)",
+      "quote": "A reasonable investor does not expect that every opinion in a registration statement is correct; opinions, after all, are inherently uncertain.",
+      "implication": "Not every opinion in the S-1 that could theoretically be tested under Omnicare should be flagged. Only flag opinions where the tool has identified SPECIFIC contrary facts from the ClinicalTrials.gov data or from the S-1 itself that undermine the opinion.",
+      "additional_calibration_from_tongue": "Per Tongue v. Sanofi, 816 F.3d 199 (2d Cir. 2016): 'Omnicare does not impose liability merely because an issuer failed to disclose information that ran counter to an opinion expressed in the registration statement.' An opinion is not necessarily misleading 'when an issuer knows, but fails to disclose, some fact cutting the other way.' The tool must find a meaningful conflict, not merely a fact that 'cuts against' the opinion."
+    }
+  },
+
+  "matrixx_significance_check": {
+    "legal_basis_id": "matrixx",
+    "legal_basis_citation": "563 U.S. 27 (2011)",
+    "question": "Could any of the findings be dismissed on the grounds that the underlying data did not reach statistical significance?",
+    "procedure": [
+      "Step 1: Review all findings involving small trials (N<30), adverse events, or efficacy results",
+      "Step 2: For each, note whether the S-1 or a potential defense could argue the finding is immaterial because it is 'not statistically significant'",
+      "Step 3: If so, note that Matrixx Initiatives, 563 U.S. 27 (2011) rejected the bright-line statistical significance test for materiality",
+      "Step 4: Apply the TSC Industries materiality test instead: would a reasonable investor consider this information important?",
+      "Step 5: Consider the source, content, and context of the information (per Matrixx's fact-specific inquiry)",
+      "Step 6: Note that 'medical professionals and researchers do not limit the data they consider to the results of randomized clinical trials or to statistically significant evidence' (Matrixx)"
+    ],
+    "common_scenarios_in_biotech_s1s": [
+      {
+        "scenario": "Small Phase 1 trial (N=12) shows 50% serious adverse events",
+        "potential_defense": "Sample size too small for statistical significance",
+        "matrixx_response": "A 50% serious AE rate in 12 patients is information a reasonable investor would want to know, regardless of sample size. Medical professionals routinely act on such data.",
+        "tool_action": "Flag the AE rate. Note sample size as context but do not dismiss the finding."
+      },
+      {
+        "scenario": "Phase 2 trial (N=40) misses primary endpoint (p=0.12)",
+        "potential_defense": "Result did not reach statistical significance; trial was exploratory",
+        "matrixx_response": "The failure to meet a primary endpoint, even in a small trial, is material information about the drug's efficacy prospects. A reasonable investor would want to know.",
+        "tool_action": "Flag the missed endpoint. The lack of statistical significance does not make the finding immaterial."
+      },
+      {
+        "scenario": "3 adverse event reports of a serious condition in a 20-patient trial",
+        "potential_defense": "Too few events for a statistically significant safety signal",
+        "matrixx_response": "Per Matrixx, 'A lack of statistically significant data does not mean that medical experts have no reliable basis for inferring a causal link between a drug and adverse events.'",
+        "tool_action": "Flag the adverse events. Note that Matrixx specifically addressed this scenario (adverse event reports below statistical significance threshold)."
+      }
+    ],
+    "calibration": {
+      "say_this": "Under Matrixx Initiatives, Inc. v. Siracusano, 563 U.S. 27 (2011), the materiality of [finding] does not depend on statistical significance. The Supreme Court unanimously held that 'medical professionals and researchers do not limit the data they consider to the results of randomized clinical trials or to statistically significant evidence.' A reasonable investor may consider [specific information] important regardless of sample size.",
+      "not_this": "This is definitely material despite not being statistically significant. / This data proves the drug is unsafe.",
+      "why": "Matrixx establishes that statistical significance is not a THRESHOLD for materiality, but it does not mean that every data point from every small trial is automatically material. The TSC Industries 'total mix' analysis still applies — the question is whether a reasonable investor would consider the information important in context."
+    },
+    "interaction_with_rigel": {
+      "note": "Rigel (697 F.3d 869) cabins the Matrixx principle: even though adverse events may be material without statistical significance, a company that discloses top-line safety data is not required to disclose every safety-related result. The question is whether the omitted data renders the stated data misleading. The Matrixx check should be applied in conjunction with the Rigel partial-disclosure framework."
+    }
+  }
+}
