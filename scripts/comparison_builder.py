@@ -402,6 +402,179 @@ def _compare_endpoints(s1_passages: list[dict], ctgov_study: dict) -> dict:
     }
 
 
+def _check_fdaaa_801(ctgov_study: dict) -> dict:
+    """Check FDAAA 801 results posting compliance.
+
+    If a trial is COMPLETED and has no results posted, check if it is
+    past the 12-month statutory deadline for results reporting.
+    """
+    from datetime import datetime
+
+    status = ctgov_study.get("status", {})
+    overall = status.get("overall_status", "UNKNOWN")
+    has_results = ctgov_study.get("has_results", False)
+    issues = []
+
+    if overall == "COMPLETED" and not has_results:
+        completion_str = status.get("completion_date", "")
+        if completion_str:
+            comp_date = None
+            for fmt in ("%B %Y", "%B %d, %Y", "%Y-%m-%d"):
+                try:
+                    comp_date = datetime.strptime(completion_str, fmt)
+                    break
+                except ValueError:
+                    pass
+            if comp_date:
+                months_since = (datetime.now() - comp_date).days / 30.44
+                if months_since > 12:
+                    issues.append({
+                        "type": "fdaaa_801_noncompliance",
+                        "severity": "high",
+                        "detail": (
+                            f"Trial completed on {completion_str} "
+                            f"(~{int(months_since)} months ago) but no "
+                            f"results posted on ClinicalTrials.gov. "
+                            f"FDAAA 801 requires results within 12 months."
+                        ),
+                    })
+                else:
+                    issues.append({
+                        "type": "fdaaa_801_window",
+                        "severity": "low",
+                        "detail": (
+                            f"Trial completed on {completion_str} "
+                            f"(~{int(months_since)} months ago). Within "
+                            f"12-month FDAAA 801 window, but results not "
+                            f"yet posted."
+                        ),
+                    })
+
+    return {"issues": issues}
+
+
+def _check_endpoint_hierarchy(s1_passages: list[dict], ctgov_study: dict) -> dict:
+    """Detect the Harkonen pattern: leading with secondary while burying primary.
+
+    Identifies the S-1 headline finding (first efficacy mention in
+    summary/business sections) and checks whether it comes from
+    the primary endpoint.
+    """
+    primary = ctgov_study.get("primary_outcomes", [])
+    secondary = ctgov_study.get("secondary_outcomes", [])
+    s1_text = " ".join(p.get("text", "") for p in s1_passages).lower()
+    issues = []
+
+    if not primary:
+        return {"headline_finding": None, "issues": issues}
+
+    # Find the first efficacy result mentioned (the "headline")
+    # Prioritize passages from summary or business sections
+    headline_passage = None
+    efficacy_pattern = re.compile(
+        r"(?:response\s+rate|ORR|overall\s+response|progression.free"
+        r"|PFS|overall\s+survival|OS\b|complete\s+remission|CR\b"
+        r"|partial\s+response|PR\b|duration\s+of\s+response|DOR"
+        r"|event.free\s+survival|EFS|disease.free|DFS"
+        r"|(?:met|achieved|demonstrated).*?(?:endpoint|primary))",
+        re.IGNORECASE
+    )
+    priority_sections = ("summary", "business")
+    for p in s1_passages:
+        sec_class = p.get("section_class", "unknown")
+        if sec_class in priority_sections:
+            if efficacy_pattern.search(p.get("text", "")):
+                headline_passage = p
+                break
+    if not headline_passage:
+        for p in s1_passages:
+            if efficacy_pattern.search(p.get("text", "")):
+                headline_passage = p
+                break
+
+    if not headline_passage:
+        return {"headline_finding": None, "issues": issues}
+
+    # Check if headline is about a secondary endpoint
+    headline_text = headline_passage.get("text", "").lower()
+    primary_mentioned_in_headline = False
+    for pe in primary:
+        measure = pe.get("measure", "").lower()
+        key_terms = [t for t in re.findall(r"\b\w{4,}\b", measure)
+                     if t not in ("with", "from", "that", "this", "were", "been")]
+        if any(t in headline_text for t in key_terms[:3]):
+            primary_mentioned_in_headline = True
+            break
+
+    secondary_mentioned_in_headline = False
+    for se in secondary:
+        measure = se.get("measure", "").lower()
+        key_terms = [t for t in re.findall(r"\b\w{4,}\b", measure)
+                     if t not in ("with", "from", "that", "this", "were", "been")]
+        if any(t in headline_text for t in key_terms[:3]):
+            secondary_mentioned_in_headline = True
+            break
+
+    # Check if primary endpoint is discussed anywhere
+    primary_discussed = False
+    for pe in primary:
+        measure = pe.get("measure", "").lower()
+        key_terms = [t for t in re.findall(r"\b\w{4,}\b", measure)
+                     if t not in ("with", "from", "that", "this", "were", "been")]
+        if any(t in s1_text for t in key_terms[:3]):
+            primary_discussed = True
+            break
+
+    # Harkonen pattern: headline from secondary, primary not discussed or failed
+    if secondary_mentioned_in_headline and not primary_mentioned_in_headline:
+        if not primary_discussed:
+            issues.append({
+                "type": "harkonen_pattern",
+                "severity": "high",
+                "detail": (
+                    "S-1 headline finding appears to be from a secondary "
+                    "endpoint, and the primary endpoint is not clearly "
+                    "discussed. This matches the Harkonen pattern."
+                ),
+            })
+        else:
+            issues.append({
+                "type": "endpoint_hierarchy_unclear",
+                "severity": "medium",
+                "detail": (
+                    "S-1 headline finding appears to be from a secondary "
+                    "endpoint. Primary endpoint is discussed elsewhere, but "
+                    "hierarchy may be unclear."
+                ),
+            })
+
+    return {
+        "headline_finding": {
+            "text": headline_passage.get("text", "")[:200],
+            "section": headline_passage.get("section", ""),
+            "page_approx": headline_passage.get("page_approx", 0),
+            "primary_in_headline": primary_mentioned_in_headline,
+            "secondary_in_headline": secondary_mentioned_in_headline,
+        },
+        "primary_discussed_anywhere": primary_discussed,
+        "issues": issues,
+    }
+
+
+def _color_code_element(status: str) -> str:
+    """Map a comparison status to a color code for display output.
+
+    GREEN = match or supported, YELLOW = partial or absent, RED = mismatch.
+    """
+    if status in ("MATCH", "SUPPORTED", "info"):
+        return "GREEN"
+    elif status in ("PARTIAL", "ABSENT", "low", "medium"):
+        return "YELLOW"
+    elif status in ("MISMATCH", "CONTRADICTED", "high"):
+        return "RED"
+    return "GRAY"
+
+
 def _compare_results(s1_passages: list[dict], ctgov_study: dict) -> dict:
     """Compare posted results against S-1 claims."""
     if not ctgov_study.get("has_results"):
@@ -657,17 +830,40 @@ def build_comparison(
         design_cmp = _compare_design(s1_passages, study)
         endpoint_cmp = _compare_endpoints(s1_passages, study)
         results_cmp = _compare_results(s1_passages, study)
+        fdaaa_cmp = _check_fdaaa_801(study)
+        hierarchy_cmp = _check_endpoint_hierarchy(s1_passages, study)
 
         # Collect issues from this study
         study_issues = []
         for cmp in [phase_cmp, status_cmp, enrollment_cmp, design_cmp,
-                     endpoint_cmp, results_cmp]:
+                     endpoint_cmp, results_cmp, fdaaa_cmp, hierarchy_cmp]:
             study_issues.extend(cmp.get("issues", []))
 
-        # Tag each issue with the NCT ID
+        # Tag each issue with the NCT ID and color code
         for issue in study_issues:
             issue["nct_id"] = nct_id
+            issue["color"] = _color_code_element(issue.get("severity", ""))
         all_issues.extend(study_issues)
+
+        # Build color-coded design comparison table
+        design_table = []
+        for label, cmp_data, element in [
+            ("Phase", phase_cmp, "ctgov_phases"),
+            ("Status", status_cmp, "ctgov_status"),
+            ("Enrollment", enrollment_cmp, "ctgov_enrollment"),
+            ("Masking", design_cmp, "ctgov_masking"),
+            ("Allocation", design_cmp, "ctgov_allocation"),
+        ]:
+            ctgov_val = cmp_data.get(element, "")
+            has_issues = any(i.get("severity") in ("high", "medium")
+                             for i in cmp_data.get("issues", []))
+            status_str = "MISMATCH" if has_issues else "MATCH"
+            design_table.append({
+                "element": label,
+                "ctgov_value": str(ctgov_val),
+                "status": status_str,
+                "color": _color_code_element(status_str),
+            })
 
         study_comparisons.append({
             "nct_id": nct_id,
@@ -681,6 +877,9 @@ def build_comparison(
             "design": design_cmp,
             "endpoints": endpoint_cmp,
             "results": results_cmp,
+            "fdaaa_801": fdaaa_cmp,
+            "endpoint_hierarchy": hierarchy_cmp,
+            "design_comparison_table": design_table,
             "issue_count": len(study_issues),
         })
 

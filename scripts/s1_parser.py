@@ -108,6 +108,42 @@ FDA_RE = re.compile("|".join(FDA_PATTERNS), re.IGNORECASE)
 
 CHARS_PER_PAGE = 3000  # approximate
 
+# Section classification for asymmetric placement analysis.
+# Helps detect when positive language is in Business/Summary while
+# caveats are buried in Risk Factors.
+SECTION_CLASSES = {
+    "PROSPECTUS SUMMARY": "summary",
+    "RISK FACTORS": "risk_factors",
+    "USE OF PROCEEDS": "other",
+    "DILUTION": "other",
+    "CAPITALIZATION": "other",
+    "BUSINESS": "business",
+    "MANAGEMENT'S DISCUSSION AND ANALYSIS": "mda",
+    "MANAGEMENT": "other",
+    "EXECUTIVE COMPENSATION": "other",
+    "CERTAIN RELATIONSHIPS": "other",
+    "PRINCIPAL STOCKHOLDERS": "other",
+    "DESCRIPTION OF CAPITAL STOCK": "other",
+    "SHARES ELIGIBLE FOR FUTURE SALE": "other",
+    "MATERIAL U.S. FEDERAL INCOME TAX": "other",
+    "UNDERWRITING": "other",
+    "LEGAL MATTERS": "other",
+    "EXPERTS": "other",
+    "WHERE YOU CAN FIND MORE INFORMATION": "other",
+    "INDEX TO FINANCIAL STATEMENTS": "financial",
+    "TABLE OF CONTENTS": "other",
+    "FULL DOCUMENT": "unknown",
+}
+
+
+def _classify_section(section_name: str) -> str:
+    """Classify a section name into a high-level category.
+
+    Returns one of: summary, risk_factors, business, mda, financial, other, unknown.
+    Used for asymmetric placement analysis (Check 5: FDA Communications).
+    """
+    return SECTION_CLASSES.get(section_name, "unknown")
+
 
 # ── HTML Parsing ──────────────────────────────────────────────────────
 
@@ -602,8 +638,13 @@ def find_candidates(filepath: str) -> dict:
                 ],
             },
             "passages": [
-                {"section": p["section"], "page_approx": p["page_approx"],
-                 "text": _normalize_text(p["text"][:500])}
+                {
+                    "section": p["section"],
+                    "section_class": _classify_section(p["section"]),
+                    "page_approx": p["page_approx"],
+                    "char_offset": p["char_offset"],
+                    "text": _normalize_text(p["text"][:500]),
+                }
                 for p in limited_passages
             ],
         })
