@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
-ctgov_fetch.py — Download full study records from ClinicalTrials.gov API v2.
+ctgov_fetch.py — Search and download study records from ClinicalTrials.gov API v2.
 
 Usage:
-    python scripts/ctgov_fetch.py --nct NCT05355805
-    python scripts/ctgov_fetch.py --nct NCT05355805 --nct NCT05623345
+    # Search for studies by drug name (returns summary list)
+    python scripts/ctgov_fetch.py search --drug izokibep
+    python scripts/ctgov_fetch.py search --drug izokibep --sponsor "ACELYRIN"
+
+    # Download full study records by NCT ID
+    python scripts/ctgov_fetch.py fetch --nct NCT05355805
+    python scripts/ctgov_fetch.py fetch --nct NCT05355805 --nct NCT05623345
 """
 
 import argparse
@@ -260,38 +265,151 @@ def _extract_results(results: dict) -> dict:
     }
 
 
+def search_by_name(
+    drug_name: str,
+    max_results: int = 50,
+    sponsor_filter: str = None,
+) -> list[dict]:
+    """Search ClinicalTrials.gov for studies involving a drug/intervention name.
+
+    Uses the API v2 query.intr parameter. Returns a list of study summaries
+    (no full download — caller picks NCTs to fetch in full).
+
+    Args:
+        drug_name: Drug or intervention name to search for (e.g. "izokibep").
+        max_results: Max number of studies to return (default 50).
+        sponsor_filter: Optional sponsor name to narrow results.
+
+    Returns:
+        List of dicts with: nct_id, brief_title, overall_status, phases,
+        enrollment, sponsor, conditions, interventions, start_date, has_results.
+    """
+    params = {
+        "query.intr": drug_name,
+        "pageSize": min(max_results, 100),
+        "format": "json",
+    }
+    if sponsor_filter:
+        params["query.spons"] = sponsor_filter
+
+    headers = {"Accept": "application/json"}
+    url = CTGOV_API_BASE
+
+    time.sleep(RATE_LIMIT_DELAY)
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=30)
+    except requests.RequestException as e:
+        print(f"Search request failed, retrying in 3s: {e}", file=sys.stderr)
+        time.sleep(3)
+        resp = requests.get(url, params=params, headers=headers, timeout=30)
+
+    resp.raise_for_status()
+    data = resp.json()
+
+    studies = data.get("studies", [])
+    results = []
+    for study in studies:
+        proto = study.get("protocolSection", {})
+        id_mod = proto.get("identificationModule", {})
+        status_mod = proto.get("statusModule", {})
+        design_mod = proto.get("designModule", {})
+        sponsor_mod = proto.get("sponsorCollaboratorsModule", {})
+        cond_mod = proto.get("conditionsModule", {})
+        ai_mod = proto.get("armsInterventionsModule", {})
+
+        enrollment_info = design_mod.get("enrollmentInfo", {})
+        lead_sponsor = sponsor_mod.get("leadSponsor", {})
+        has_results = study.get("hasResults", False)
+
+        # Extract intervention names
+        intervention_names = []
+        for iv in ai_mod.get("interventions", []):
+            intervention_names.append(iv.get("name", ""))
+
+        results.append({
+            "nct_id": id_mod.get("nctId", ""),
+            "brief_title": id_mod.get("briefTitle", ""),
+            "overall_status": status_mod.get("overallStatus", ""),
+            "phases": design_mod.get("phases", []),
+            "enrollment": enrollment_info.get("count"),
+            "enrollment_type": enrollment_info.get("type", ""),
+            "sponsor": lead_sponsor.get("name", ""),
+            "conditions": cond_mod.get("conditions", []),
+            "interventions": intervention_names,
+            "start_date": _safe_get(status_mod, "startDateStruct", "date", default=""),
+            "completion_date": _safe_get(status_mod, "completionDateStruct", "date", default=""),
+            "has_results": has_results,
+        })
+
+    return results
+
+
 # ── CLI ───────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(
         description="ClinicalTrials.gov study fetcher (API v2)"
     )
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest="action", help="Action to perform")
+
+    # fetch action — download full study records by NCT ID
+    fetch_parser = subparsers.add_parser("fetch", help="Download full study record(s)")
+    fetch_parser.add_argument(
         "--nct", required=True, action="append",
         help="NCT number(s) to fetch (can specify multiple)",
     )
-    parser.add_argument(
+    fetch_parser.add_argument(
         "--output-dir", default=".",
         help="Directory to save JSON files (default: current directory)",
     )
+
+    # search action — search for studies by drug name
+    search_parser = subparsers.add_parser("search", help="Search studies by drug/intervention name")
+    search_parser.add_argument(
+        "--drug", required=True, help="Drug/intervention name to search for",
+    )
+    search_parser.add_argument(
+        "--sponsor", default=None, help="Optional sponsor name to filter by",
+    )
+    search_parser.add_argument(
+        "--max-results", type=int, default=50,
+        help="Maximum number of results (default: 50)",
+    )
+
     args = parser.parse_args()
 
-    os.makedirs(args.output_dir, exist_ok=True)
+    if args.action == "fetch":
+        os.makedirs(args.output_dir, exist_ok=True)
+        results = []
+        for nct_id in args.nct:
+            nct_id = nct_id.strip().upper()
+            print(f"Fetching {nct_id}...", file=sys.stderr)
+            result = fetch_study(nct_id, args.output_dir)
+            results.append(result)
+            if "error" in result:
+                print(f"  ERROR: {result['error']}", file=sys.stderr)
+            else:
+                status = "POSTED" if result["has_results"] else "NOT YET POSTED"
+                print(f"  {result['brief_title']}", file=sys.stderr)
+                print(f"  Status: {result['overall_status']} | Results: {status}", file=sys.stderr)
+        print(json.dumps(results, indent=2))
 
-    results = []
-    for nct_id in args.nct:
-        nct_id = nct_id.strip().upper()
-        print(f"Fetching {nct_id}...", file=sys.stderr)
-        result = fetch_study(nct_id, args.output_dir)
-        results.append(result)
-        if "error" in result:
-            print(f"  ERROR: {result['error']}", file=sys.stderr)
-        else:
-            status = "POSTED" if result["has_results"] else "NOT YET POSTED"
-            print(f"  {result['brief_title']}", file=sys.stderr)
-            print(f"  Status: {result['overall_status']} | Results: {status}", file=sys.stderr)
+    elif args.action == "search":
+        print(f"Searching ClinicalTrials.gov for: {args.drug}", file=sys.stderr)
+        if args.sponsor:
+            print(f"  Sponsor filter: {args.sponsor}", file=sys.stderr)
+        results = search_by_name(args.drug, args.max_results, args.sponsor)
+        print(f"  Found {len(results)} studies", file=sys.stderr)
+        for r in results:
+            status_str = r['overall_status']
+            results_str = " [HAS RESULTS]" if r['has_results'] else ""
+            print(f"  {r['nct_id']}: {r['brief_title'][:70]} ({status_str}){results_str}", file=sys.stderr)
+        print(json.dumps(results, indent=2))
 
-    print(json.dumps(results, indent=2))
+    else:
+        # Backward-compatible: if no subcommand, treat --nct as fetch
+        parser.print_help()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

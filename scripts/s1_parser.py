@@ -469,14 +469,12 @@ def find_candidates(filepath: str) -> dict:
     if not company_candidates:
         company_candidates = sorted(scored, key=lambda c: -c["ownership_score"])[:5]
 
-    # Build candidate objects (require minimum 3 passages to be a meaningful candidate)
-    MIN_PASSAGES = 3
+    # Build candidate objects — include ALL ownership-positive candidates
+    # (user selects which one to investigate further via the skill)
     candidates = []
     for cand in company_candidates:
         name = cand["name"]
         passages = _extract_passages_for_name(name, sections)
-        if len(passages) < MIN_PASSAGES:
-            continue
 
         # Aggregate all passage text for this candidate (normalized)
         all_text = _normalize_text(" ".join(p["text"] for p in passages))
@@ -580,6 +578,7 @@ def find_candidates(filepath: str) -> dict:
         candidates.append({
             "name": name,
             "also_known_as": also_known_as,
+            "passage_count": len(passages),
             "indications": indications,
             "phase_claims": phase_claims,
             "nct_numbers": cand_ncts,
@@ -608,6 +607,9 @@ def find_candidates(filepath: str) -> dict:
                 for p in limited_passages
             ],
         })
+
+    # Sort candidates by passage count (most-mentioned first)
+    candidates.sort(key=lambda c: -c["passage_count"])
 
     # Pipeline table text — look for table near "pipeline" keyword
     pipeline_table_text = ""
