@@ -86,15 +86,307 @@ Final report with all findings, sources, and reasoning
 
 ### D. Legal Framework
 
-**Governing provisions:**
-- Securities Act § 11 (15 U.S.C. § 77k): Strict liability for material misstatements or omissions in registration statements.
-- Rule 408 (17 C.F.R. § 230.408): The S-1 must include "such further material information as may be necessary to make the required statements not misleading."
-- Regulation S-K, Items 101(c) and 303: Require description of products, business, and material trends.
+This section explains the legal foundation for the entire analysis.
+Every check, every standard, and every escalation test traces back
+to the authorities described here. Read this first — it explains
+**why** we check what we check.
 
-**How specific standards are derived:**
-There is no current SEC industry guide for biotech S-1s. The specific disclosure requirements are derived from SEC **comment letters** — written feedback sent to registrants during S-1 review. This framework is built from 22+ verified verbatim SEC comment letter excerpts, 3 enforcement actions, and 5 case law authorities, all specific to clinical trial disclosure in biotech filings.
+For the full legal brief with all verbatim source quotations, see
+`reference/legal_brief.md`.
 
-For full legal brief, see `reference/legal_brief.md`.
+---
+
+#### D.1 The Core Problem: Strict Liability for S-1 Misstatements
+
+When a biotech company files an S-1 to go public, **every person who
+signs it is strictly liable for material misstatements or omissions**.
+This is not a negligence standard — there is no intent requirement.
+If the S-1 contains a material misstatement or omits a material fact,
+liability attaches regardless of whether anyone intended to mislead.
+
+This comes from **Securities Act § 11 (15 U.S.C. § 77k)**, which
+makes the following parties potentially liable: every person who
+signed the registration statement, every director, every expert whose
+opinion is cited (e.g., auditors), and the underwriter. The standard
+is: would a reasonable investor consider the misstated or omitted
+fact important in deciding whether to buy the security? (*TSC
+Industries v. Northway*, 426 U.S. 438 (1976)).
+
+**What this means for our analysis:** We are looking for facts that
+a reasonable investor would want to know about a biotech company's
+clinical trial program — and checking whether the S-1 provides them
+accurately.
+
+---
+
+#### D.2 Three Governing Provisions
+
+Three legal provisions together define what an S-1 must disclose
+about clinical trials:
+
+**1. Securities Act § 11 — The liability standard**
+
+Section 11 creates strict liability for anyone who signs an S-1
+containing "an untrue statement of a material fact or [that] omitted
+to state a material fact required to be stated therein or necessary
+to make the statements therein not misleading." This is the
+enforcement mechanism — it is *why* disclosure matters.
+
+**2. Rule 408 (17 C.F.R. § 230.408) — The completeness standard**
+
+Beyond what Regulation S-K explicitly requires, Rule 408 says the
+S-1 must include "such further material information, if any, as may
+be necessary to make the required statements, in light of the
+circumstances under which they are made, not misleading."
+
+In plain English: you cannot make your clinical program sound good
+by telling half the story. If you mention a clinical trial, you
+must include enough information for the description to be accurate
+and complete. This is the provision that makes *omissions*
+actionable — not just false statements. It is the single most
+frequently cited authority in our checks.
+
+**3. Regulation S-K, Items 101(c) and 303 — What must be described**
+
+These items require description of "the company's products, their
+development, and material trends." For a clinical-stage biotech
+with no approved products, the clinical trial program *is* the
+business. This means the S-1 must describe the drug candidates,
+their development stages, and the status of clinical trials in
+enough detail for an investor to evaluate the business.
+
+---
+
+#### D.3 Where the Specific Standards Come From: SEC Comment Letters
+
+There is no SEC industry guide for biotech S-1s. So how do we know
+what the SEC actually requires?
+
+The answer is **SEC comment letters**. When a company files an S-1,
+the SEC's Division of Corporation Finance reviews it and sends
+written feedback identifying specific disclosures that are deficient
+and requiring amendment before the offering can proceed. These
+letters are public record.
+
+Comment letters are the closest thing to a regulatory standard for
+biotech S-1 disclosure. When the SEC tells Company A "please remove
+all references to 'Phase 1/2' clinical trials," that establishes
+what the SEC considers inadequate — and every subsequent company
+filing an S-1 with similar language faces the same standard.
+
+**This framework is built from 22 verified verbatim SEC comment
+letter excerpts from 15 unique companies.** Every check in this
+tool traces back to specific comment letter language — the SEC's
+actual words, not our interpretation. The comment letters establish:
+
+- What language the SEC challenges (e.g., "safe and effective,"
+  "best-in-class," unexplained "Phase 1/2" labels)
+- What disclosure elements the SEC requires (e.g., primary
+  endpoints, SAE counts, statistical significance)
+- What presentation standards the SEC enforces (e.g., balanced
+  FDA communications, proper data labeling)
+
+Key comment letters cited throughout (full text in reference files):
+
+| Company | Date | What They Establish |
+|---------|------|-------------------|
+| **Altamira Therapeutics** | Feb 2023 | The anchor standard: "remove all statements that state or imply your conclusions regarding safety or efficacy... solely within the authority of the FDA." Also establishes the "well-tolerated" exception with conditions. |
+| **Sensei Biotherapeutics** | Dec 2020 | Combined phase labels must be explained or removed; preliminary data from small samples (N=9) requires balanced presentation. |
+| **Nuvalent** | Jun 2021 | "Best-in-class suggests the product is effective and likely to be approved — please delete." Also: combined phase label standard. |
+| **Immunocore** | Dec 2020 | Defines the required per-trial disclosure elements: enrollment, criteria, duration, dosage, endpoints. |
+| **Maze Therapeutics** | Jul 2024 | Endpoints must be described and whether they were achieved; SAEs must be described and quantified. |
+| **Madrigal Pharmaceuticals** | Nov 2023 | The three-part test for "well-tolerated": (a) is it true? (b) are SAEs disclosed? (c) is the basis explained? |
+| **Zenas BioPharma** | May 2024 | "We believe" qualifiers do NOT cure safety/efficacy claims — the SEC explicitly rejects this defense. |
+| **Aerovate Therapeutics** | Jun 2021 | FDA interactions must be balanced — cannot imply FDA approval is more likely than it is. |
+| **Taysha Gene Therapies** | Sep 2020 | Pipeline tables: "replace 'Pivotal' with 'Phase 3'"; separate combined phase columns. |
+| **Stealth BioTherapeutics** | Nov 2018 | Must disclose that a Phase 2 trial "did not meet its primary endpoint" — even in the summary. |
+
+---
+
+#### D.4 Enforcement Actions: What Happens When Disclosure Fails
+
+Three enforcement actions form the precedent for our most critical
+checks. These are not hypothetical risks — they are actual penalties
+imposed on real companies:
+
+**SEC v. AVEO Pharmaceuticals (LR-24062, 2018) — Check 5**
+
+AVEO selectively disclosed positive FDA feedback while omitting that
+the FDA had recommended an additional clinical trial. The SEC
+brought fraud charges. This is why Check 5 (FDA Communications
+Balance) tests whether the S-1 tells the full FDA story — positive
+*and* negative. Selective disclosure of FDA interactions is not a
+technicality; it is the specific pattern that triggered enforcement.
+
+**United States v. Harkonen / InterMune (9th Cir. 2013) — Check 9**
+
+InterMune's Phase 3 trial for Actimmune failed its primary endpoint
+(overall survival, p=0.52). The CEO issued a press release leading
+with a post-hoc subgroup analysis that appeared significant (p=0.004).
+The primary failure was mentioned but buried. Result: **criminal wire
+fraud conviction**. This is why Check 9 (Endpoint Hierarchy) tests
+whether the S-1 leads with secondary or exploratory results while
+burying the primary endpoint — the exact pattern that led to the
+only criminal conviction in this space.
+
+**SEC v. Clovis Oncology (LR-24273, 2018) — Check 9**
+
+Clovis reported a 60% objective response rate using *unconfirmed*
+responses. The confirmed ORR was only 28%. Result: **$20 million
+penalty**. This reinforces Check 9 — the S-1 must accurately
+represent which endpoints were measured and what the results actually
+showed, using the same definitions as the clinical protocol.
+
+---
+
+#### D.5 Supreme Court Standards: The Escalation Tests
+
+Three Supreme Court decisions provide the legal tests applied when
+Layer 1 checks flag concerns. These are not abstract law — they are
+the specific standards an attorney would use to assess whether a
+flagged finding creates real legal exposure:
+
+**Omnicare, Inc. v. Laborers District Council, 575 U.S. 175 (2015)
+— The Opinion Statement Test**
+
+Many S-1 statements are technically opinions ("we believe our drug
+is well-tolerated"). The Supreme Court held that opinion statements
+can still create Section 11 liability in two ways:
+
+1. **Embedded false fact**: "We believe X" implies the speaker has
+   a reasonable basis for that belief. If they know of contrary
+   facts that undermine it, the embedded factual claim is false.
+2. **Omitted contrary facts**: An opinion that omits material facts
+   known to the speaker that cut against the impression created
+   can be misleading even if the speaker genuinely holds the opinion.
+
+The Court also established a **limiting principle**: not every
+optimistic statement is actionable. The question is whether the
+opinion would mislead a reasonable investor about the facts the
+speaker knows.
+
+**Why this matters for our analysis:** When Checks 7, 9, or 10 flag
+a characterization that appears unsupported by the data (e.g., "well-
+tolerated" when SAEs occurred, or leading with secondary endpoints
+when the primary failed), the Omnicare test determines whether the
+gap rises to the level of legal concern. This is the Layer 2
+escalation for opinion-based findings.
+
+**Matrixx Initiatives v. Siracusano, 563 U.S. 27 (2011)
+— The Statistical Significance Defense-Blocker**
+
+Matrixx argued that adverse event reports were immaterial because
+they were not statistically significant. The Supreme Court rejected
+this: there is **no bright-line statistical significance threshold
+for materiality**. Information can be material even without reaching
+p<0.05.
+
+**Why this matters for our analysis:** This prevents dismissal of
+safety signals or disclosure gaps on the grounds that "the trial
+was too small" or "the result wasn't significant." If a finding is
+otherwise material — a safety signal the S-1 didn't disclose, an
+endpoint the S-1 didn't mention — Matrixx blocks the defense that
+it can be ignored because of sample size or p-value.
+
+**TSC Industries v. Northway, 426 U.S. 438 (1976)
+— The Materiality Standard**
+
+The foundational materiality test: a fact is material if there is a
+"substantial likelihood that a reasonable shareholder would consider
+it important" in making an investment decision. This is the baseline
+standard applied across all checks — every finding is ultimately
+evaluated against whether a reasonable investor would want to know it.
+
+---
+
+#### D.6 One Additional Statute: FDAAA § 801
+
+**42 U.S.C. § 282(j)(3)(C)** requires companies to post clinical
+trial results on ClinicalTrials.gov within 12 months of primary
+completion. Non-compliance carries civil monetary penalties of up to
+$10,000/day (42 U.S.C. § 282(j)(5)(C)).
+
+This is not itself an S-1 violation, but it is a material fact: a
+company that has failed to comply with a federal reporting obligation
+faces potential penalties, and Rule 408 may require disclosure of
+this non-compliance as "further material information."
+
+---
+
+#### D.7 How the Legal Framework Maps to the Three-Step Analysis
+
+The three steps of the analysis correspond to three layers of legal
+scrutiny:
+
+**STEP 1 — Are the drug candidates described correctly?**
+*(Cross-cutting S-1 language checks)*
+
+Governed by: Rule 408 (completeness) + SEC comment letter standards.
+Tests whether the S-1's language about drug candidates complies with
+what the SEC has actually enforced — phase labels, safety/efficacy
+claims, preclinical framing, comparative claims, FDA communications.
+
+| Check | What It Tests | Key Authority |
+|-------|--------------|---------------|
+| 1. Basic Disclosure | Drug name, modality, indication, stage present | Rule 408 (threshold completeness) |
+| 2. Phase Labels | Combined labels explained | Sensei, Nuvalent, Taysha comment letters |
+| 3. Preclinical Framing | Animal data not presented as clinical evidence | Curanex, Virpax comment letters |
+| 4. Comparative Claims | No unsupported superiority claims | Nuvalent, Relay, Zenas, Khosla comment letters |
+| 5. FDA Communications | Positive and negative interactions balanced | AVEO enforcement, Tongue v. Sanofi, Aerovate |
+| 6. Pipeline Accuracy | Pipeline table matches text | Taysha comment letter |
+| 7. Red Flag Phrases | No prohibited safety/efficacy language | Altamira (anchor), Graybug, Madrigal, Scopus, OS Therapies |
+| 11. Data Maturity | Preliminary data labeled correctly | Stealth, Sensei comment letters |
+
+**STEP 2 — Are the clinical studies described correctly?**
+*(Per-study comparison against ClinicalTrials.gov)*
+
+Governed by: Rule 408 + SEC comment letters defining required trial-
+level elements + ClinicalTrials.gov as the authoritative public
+record. Tests whether what the S-1 says about each trial matches
+what the federal registry records.
+
+| Check | What It Tests | Key Authority |
+|-------|--------------|---------------|
+| 8. Trial Design Match | Phase, blinding, enrollment, endpoints match CTgov | Immunocore, Maze, Stealth comment letters |
+| 9. Endpoint Hierarchy | Primary endpoint not buried; secondary not promoted | Harkonen criminal conviction, Clovis $20M penalty |
+| 10. Safety Data Match | Safety claims supported by CTgov AE data | Altamira, Madrigal, Scopus comment letters |
+| 11. Data Maturity | Conclusory language not used for non-final data | Stealth, Sensei comment letters |
+| FDAAA 801 | Results posted within 12-month deadline | 42 U.S.C. § 282(j) |
+
+**STEP 3 — Does the overall pattern mislead?**
+*(Escalation assessment — Supreme Court standards)*
+
+Triggered only when Steps 1-2 flag concerns. Tests whether
+individual findings, taken together, create legal exposure under
+the standards established by the Supreme Court.
+
+| Test | What It Asks | Key Authority |
+|------|-------------|---------------|
+| Omnicare Test | Do opinion statements omit known contrary facts? | 575 U.S. 175 (2015) |
+| Rule 408 Pattern | Do omissions systematically favor the company? | 17 C.F.R. § 230.408 |
+| Matrixx Blocker | Can findings be dismissed for lack of statistical significance? | 563 U.S. 27 (2011) |
+
+---
+
+#### D.8 Authority Inventory
+
+This tool's standards are derived from:
+
+- **22 SEC comment letter excerpts** from 15 unique companies
+  (Altamira, Sensei, Nuvalent, Immunocore, Maze, Madrigal, Zenas,
+  Aerovate, Annovis, Taysha, Stealth, Graybug, Scopus, OS
+  Therapies, Curanex, Virpax, Relay, Khosla/Valo, Coya)
+- **3 enforcement actions** (SEC v. AVEO, SEC v. Clovis, U.S. v.
+  Harkonen/InterMune)
+- **5 case law authorities** (Omnicare, Matrixx, TSC Industries,
+  Tongue v. Sanofi, Harkonen)
+- **2 statutes** (Securities Act § 11, FDAAA § 801)
+- **2 regulations** (Rule 408, Regulation S-K Items 101(c)/303)
+
+Every check in this tool cites specific authority. Every finding
+traces back to actual SEC language or court holdings. This is not
+a subjective assessment — it is a structured comparison against
+established standards.
 
 ### E. Checklist Preview
 
