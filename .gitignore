@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# Downloaded S-1 filings (large HTML files)
+s1_*.html
+
+# Downloaded CTgov data
+ctgov_*.json
+
+# OS
+.DS_Store
