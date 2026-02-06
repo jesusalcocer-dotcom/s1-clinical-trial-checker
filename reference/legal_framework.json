@@ -241,6 +241,13 @@
       },
       "sec_quote": "Biopharma companies cannot mislead investors about efficacy results.",
       "rule_for_our_tool": "When the S-1 presents efficacy metrics: (1) Does it define the metric? (2) Does the definition match FDA standards (e.g., RECIST confirmed vs unconfirmed)? (3) If using a non-standard metric (unconfirmed, per-protocol, subgroup), is this disclosed? (4) Does the reported rate match the protocol's pre-specified analysis population?",
+      "comparison_pair": {
+        "problematic_language": "Clovis publicly reported a 60% objective response rate (ORR) for rociletinib at ASCO 2015 and in subsequent public stock offering materials (July 2015, raising $298 million).",
+        "source": "ASCO conference presentation (May 2015) and public offering materials (July 2015)",
+        "what_was_wrong": "The 60% ORR was based on unconfirmed tumor responses (shrinkage on a single scan). The FDA standard (RECIST 1.1) requires confirmation on a subsequent scan. The confirmed ORR was approximately 28%. The company's own protocol called for confirmed ORR.",
+        "legal_consequence": "$20 million civil penalty, CEO fined $250,000, CFO fined $100,000 plus disgorgement. Separate $142 million class action settlement.",
+        "comparison_instruction": "If the S-1 being analyzed presents an efficacy metric without defining it, or uses a non-standard definition (unconfirmed responses, per-protocol population, non-ITT), compare to Clovis. Key question: would an investor reading the S-1 understand the metric definition and its limitations?"
+      },
       "verified": true
     },
     {
@@ -274,6 +281,13 @@
         "pardon": "Presidential pardon in 2021 (does not erase conviction or operate as determination of innocence)"
       },
       "rule_for_our_tool": "When the S-1 presents efficacy results, check: (1) Is the highlighted result from the primary endpoint or from a secondary/exploratory/post-hoc analysis? (2) If from a secondary or post-hoc analysis, is the primary endpoint result ALSO prominently disclosed? (3) Is the hierarchy (primary vs secondary vs post-hoc) clearly stated? (4) Is any subgroup analysis identified as pre-specified or post-hoc? Leading with a secondary/post-hoc success while burying a primary failure is the Harkonen pattern.",
+      "comparison_pair": {
+        "problematic_language": "InterMune Announces Phase III Data Demonstrating Survival Benefit of Actimmune in IPF — Reduces Mortality by 70% in Patients With Mild to Moderate Disease",
+        "source": "Press release headline and subhead (August 28, 2002)",
+        "what_was_wrong": "The headline presented a post-hoc subgroup survival result (p=0.004) as the definitive finding. The primary endpoint (PFS in all patients) failed. All 10 secondary endpoints also failed. The subgroup was unblinded, not pre-specified, and had no multiplicity correction. The subsequent 826-patient confirmatory trial (INSPIRE) found more patients died on drug (15%) than placebo (13%).",
+        "legal_consequence": "Criminal wire fraud conviction for CEO W. Scott Harkonen. 3 years probation, 6 months home confinement. InterMune paid nearly $37 million under deferred prosecution agreement.",
+        "comparison_instruction": "If the S-1 being analyzed leads with a result that is not from the primary endpoint, compare to Harkonen. Key questions: (1) Is the highlighted result from the primary or a secondary/post-hoc analysis? (2) Is the primary endpoint result prominently disclosed? (3) Is the hierarchy clearly labeled? Rate similarity: HIGH if primary failed and S-1 leads with secondary; MODERATE if both disclosed but hierarchy unclear; LOW if primary prominently discussed."
+      },
       "verified": true,
       "verification_note": "Core facts verified across multiple sources including legal analyses, news coverage, and court filings. The exact p-value for the primary PFS endpoint (p=0.52 per research guide) was NOT confirmed in retrieved sources — the NEJM paper states 'not statistically significant' but exact p-value not extracted. Marked as UNVERIFIED for that specific value."
     },
@@ -291,6 +305,13 @@
         "stock_impact": "When the negative FDA feedback eventually became known, the stock price declined significantly."
       },
       "rule_for_our_tool": "Selective disclosure of FDA communications is actionable. If the S-1 describes any FDA interaction (alignment meetings, positive feedback, breakthrough therapy designation, fast track, pre-IND meeting), ALL material FDA interactions must be disclosed, including concerns, additional study requests, and negative decisions. The tool should flag any S-1 that mentions positive FDA interactions without also disclosing any known negative FDA feedback.",
+      "comparison_pair": {
+        "problematic_language": "AVEO disclosed positive aspects of FDA interactions, including the existence of a pre-NDA meeting and favorable characterizations of the regulatory pathway, while omitting the FDA's recommendation for an additional clinical trial.",
+        "source": "AVEO Pharmaceuticals public filings and earnings calls (2012-2013)",
+        "what_was_wrong": "AVEO selectively disclosed positive FDA interactions while omitting the single most material piece of FDA feedback: that the FDA recommended an additional clinical trial before approval. This created a misleadingly optimistic picture of the regulatory outlook for tivozanib.",
+        "legal_consequence": "SEC fraud charges (LR-24062, 2018). AVEO's stock price declined significantly when the negative FDA feedback eventually became known, and the drug's approval was significantly delayed.",
+        "comparison_instruction": "If the S-1 being analyzed mentions positive FDA interactions (breakthrough therapy, fast track, productive meetings, alignment), check whether ANY negative FDA feedback is also disclosed. Key questions: (1) Are positive and negative FDA interactions in the same section, or are negatives buried in Risk Factors? (2) Is the most material FDA feedback (whatever it is) clearly disclosed? (3) Would a reader of the Business section alone get a balanced picture of the FDA relationship?"
+      },
       "verified": true,
       "verification_note": "Core facts verified from SEC litigation release URL and secondary legal analyses. Exact SEC complaint language not extracted due to access limitations."
     }

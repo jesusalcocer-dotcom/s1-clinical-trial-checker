@@ -1,0 +1,675 @@
+{
+  "version": "4.0",
+  "description": "Operationalized check definitions for the S-1 Clinical Trial Disclosure Checker. Each check includes pseudocode logic, grep patterns, thresholds, LLM prompt templates with slots, and references to precedent language in other reference files.",
+  "checks": [
+    {
+      "id": "basic_disclosure",
+      "display_name": "Basic Disclosure",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Verify the S-1 provides fundamental clinical trial information: drug identity, indication, modality, development stage, and no-approved-products statement.",
+      "requires_ctgov": false,
+      "steps": [
+        {
+          "step": 1,
+          "name": "indication_check",
+          "executor": "code",
+          "action": "grep for disease/condition name within 500 chars of candidate name",
+          "patterns": ["for the treatment of", "in patients with", "for [A-Z]"],
+          "output": "PRESENT (with text) | ABSENT"
+        },
+        {
+          "step": 2,
+          "name": "modality_check",
+          "executor": "code",
+          "action": "grep for modality keywords within candidate passages",
+          "patterns": ["small molecule", "antibody", "monoclonal", "gene therapy", "cell therapy", "peptide", "oligonucleotide", "vaccine", "bispecific", "ADC", "conjugate"],
+          "inn_suffixes": ["-mab", "-nib", "-tide", "-gene", "-mer", "-tinib", "-ciclib"],
+          "output": "PRESENT (with text) | ABSENT"
+        },
+        {
+          "step": 3,
+          "name": "development_stage_check",
+          "executor": "code",
+          "action": "extract all phase mentions and check coherent progression",
+          "patterns": ["Phase [1-3]", "preclinical", "IND", "NDA", "BLA"],
+          "output": "CLEAR | UNCLEAR | DATES_MISSING"
+        },
+        {
+          "step": 4,
+          "name": "no_approved_products_check",
+          "executor": "code",
+          "action": "grep for standard clinical-stage disclosures",
+          "patterns": ["no approved products", "clinical-stage", "not generated.*revenue", "no products.*approved"],
+          "output": "PRESENT (with text) | ABSENT"
+        }
+      ],
+      "escalation": "none",
+      "thresholds": {
+        "green": "all elements PRESENT",
+        "yellow": "any element ABSENT",
+        "red": "N/A — this is a presence check"
+      },
+      "legal_basis_ids": ["rule_408", "section_11"],
+      "comment_letter_excerpt_ids": ["excerpt_trial_design_001"]
+    },
+    {
+      "id": "phase_labels",
+      "display_name": "Phase Labels",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Check whether combined phase labels (e.g., Phase 1/2) are adequately explained with distinct portions described.",
+      "requires_ctgov": false,
+      "steps": [
+        {
+          "step": 1,
+          "name": "combined_label_scan",
+          "executor": "code",
+          "action": "regex for combined phase labels",
+          "patterns": ["Phase\\s*[12]\\s*/\\s*[23]", "Phase\\s+\\d[ab]?\\s*/\\s*\\d[ab]?"],
+          "output": "list of combined labels with positions",
+          "short_circuit": "IF no combined labels -> GREEN, done"
+        },
+        {
+          "step": 2,
+          "name": "explanation_search",
+          "executor": "code",
+          "action": "for each combined label, extract 1000 chars context and search for explanation terms",
+          "patterns": ["Phase 1 portion", "dose escalation", "MTD", "RP2D", "Phase 2 portion", "expansion", "efficacy", "activity", "transition", "criteria", "trigger"],
+          "output": "explanation_found: true | false per label"
+        },
+        {
+          "step": 3,
+          "name": "llm_assessment",
+          "executor": "llm",
+          "trigger": "step 2 output has any explanation_found == false",
+          "prompt_template": "The S-1 uses the label '{{COMBINED_LABEL}}' in this context:\n'{{S1_PASSAGE}}'\n\nThe SEC has required companies to explain what each phase portion involves. Here is the SEC's comment in a comparable situation:\n'{{PRECEDENT_COMMENT}}'\n\nDoes this S-1 passage adequately explain both portions?",
+          "slot_sources": {
+            "COMBINED_LABEL": "step 1 output",
+            "S1_PASSAGE": "step 2 context extraction",
+            "PRECEDENT_COMMENT": "comment_letter_excerpts.json -> excerpt_phase_001.sec_comment_verbatim"
+          }
+        }
+      ],
+      "thresholds": {
+        "green": "no combined labels, or all combined labels explained",
+        "yellow": "combined labels present without adequate explanation"
+      },
+      "legal_basis_ids": ["rule_408"],
+      "comment_letter_excerpt_ids": ["excerpt_phase_001", "excerpt_phase_002", "excerpt_phase_003"]
+    },
+    {
+      "id": "preclinical_framing",
+      "display_name": "Preclinical Framing",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Ensure preclinical/animal data is appropriately framed without implying established clinical safety or efficacy. Check MoA language uses hypothetical framing.",
+      "requires_ctgov": false,
+      "steps": [
+        {
+          "step": 1,
+          "name": "preclinical_reference_scan",
+          "executor": "code",
+          "action": "identify preclinical references",
+          "patterns": ["preclinical", "animal", "mouse", "rat", "primate", "in vitro", "in vivo", "xenograft", "DIO model", "knockout"],
+          "short_circuit": "IF none found -> N/A, skip"
+        },
+        {
+          "step": 2,
+          "name": "caveat_check",
+          "executor": "code",
+          "action": "for each preclinical reference, check for translation risk caveat within 2000 chars",
+          "patterns": ["may not be predictive", "no assurance", "animal.*not.*predict", "preclinical.*may not.*translate"],
+          "output": "CAVEAT_PRESENT | CAVEAT_ABSENT per reference"
+        },
+        {
+          "step": 3,
+          "name": "moa_classification",
+          "executor": "code",
+          "action": "classify MoA language as HYPOTHETICAL or FACTUAL",
+          "hypothetical_markers": ["designed to", "intended to", "aims to", "believed to", "may", "potentially"],
+          "factual_markers": ["has shown", "demonstrates", "induces", "activates", "inhibits"],
+          "output": "classification per MoA sentence",
+          "short_circuit": "IF all hypothetical -> GREEN"
+        },
+        {
+          "step": 4,
+          "name": "llm_moa_assessment",
+          "executor": "llm",
+          "trigger": "step 3 has any FACTUAL classification",
+          "prompt_template": "This S-1 states: '{{MOA_STATEMENT}}'\nThis describes the drug's mechanism using factual language ('{{SPECIFIC_VERB}}') rather than hypothetical framing.\n\nThe SEC has challenged similar language. In {{COMPANY}}'s S-1, the SEC commented:\n'{{PRECEDENT_COMMENT}}'\n\nIs this S-1's MoA statement:\n(a) Supported by clinical (human) data cited elsewhere in the S-1?\n(b) Based only on preclinical data but stated as established fact?\n(c) Appropriately qualified despite the factual verb?",
+          "slot_sources": {
+            "MOA_STATEMENT": "step 3 factual sentences",
+            "SPECIFIC_VERB": "step 3 matched factual marker",
+            "COMPANY": "comment_letter_excerpts.json -> excerpt_preclinical_001.company",
+            "PRECEDENT_COMMENT": "comment_letter_excerpts.json -> excerpt_preclinical_001.sec_comment_verbatim"
+          }
+        }
+      ],
+      "thresholds": {
+        "green": "all MoA language hypothetical, caveats present",
+        "yellow": "factual MoA language found but context may justify",
+        "red": "factual MoA language with no clinical data support and no caveat"
+      },
+      "legal_basis_ids": ["rule_408", "section_11"],
+      "comment_letter_excerpt_ids": ["excerpt_preclinical_001", "excerpt_preclinical_002", "excerpt_preclinical_003"]
+    },
+    {
+      "id": "comparative_claims",
+      "display_name": "Comparative Claims",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Check whether comparative claims are supported by head-to-head clinical data. Qualifying language ('we believe') does NOT cure the concern.",
+      "requires_ctgov": false,
+      "steps": [
+        {
+          "step": 1,
+          "name": "comparative_scan",
+          "executor": "code",
+          "action": "scan for comparative language near candidate name",
+          "patterns": ["safer", "more effective", "superior", "differentiated", "best-in-class", "first-in-class", "improved over", "advantage", "compared favorably", "outperform"],
+          "short_circuit": "IF none found -> GREEN, skip"
+        },
+        {
+          "step": 2,
+          "name": "evidence_search",
+          "executor": "code",
+          "action": "for each hit, extract 1500 chars context and search for head-to-head evidence",
+          "patterns": ["head-to-head", "direct comparison", "comparative trial"],
+          "output": "HEAD_TO_HEAD_CITED | NO_DIRECT_COMPARISON per hit"
+        },
+        {
+          "step": 3,
+          "name": "llm_comparison",
+          "executor": "llm",
+          "trigger": "step 2 has any NO_DIRECT_COMPARISON",
+          "prompt_template": "The S-1 makes this comparative statement about {{CANDIDATE}}:\n'{{S1_QUOTE}}'\n\nNo head-to-head clinical trial is cited. The SEC has challenged similar language:\n'{{PRECEDENT_COMMENT}}'\n\nIn that case, the SEC asked: '{{SEC_REQUIREMENT}}'\n\nHow does this S-1's language compare?\n(a) Materially similar (same type of unsupported comparison)\n(b) Distinguishable (this S-1 has qualifications the other lacked)\n(c) More aggressive than the language the SEC challenged",
+          "slot_sources": {
+            "CANDIDATE": "candidate name",
+            "S1_QUOTE": "step 1 matched text with context",
+            "PRECEDENT_COMMENT": "comment_letter_excerpts.json -> excerpt_comparative_003.sec_comment_verbatim",
+            "SEC_REQUIREMENT": "comment_letter_excerpts.json -> excerpt_comparative_003.what_sec_required"
+          }
+        }
+      ],
+      "thresholds": {
+        "green": "no comparative claims, or all supported by head-to-head data",
+        "yellow": "comparative claims with some qualifications",
+        "red": "unqualified comparative claims without head-to-head data"
+      },
+      "legal_basis_ids": ["rule_408", "section_11"],
+      "comment_letter_excerpt_ids": ["excerpt_comparative_001", "excerpt_comparative_002", "excerpt_comparative_003"]
+    },
+    {
+      "id": "fda_communications",
+      "display_name": "FDA Communications",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Check whether the S-1 presents a balanced picture of FDA interactions. If positive interactions described, negative feedback should also be disclosed.",
+      "requires_ctgov": false,
+      "steps": [
+        {
+          "step": 1,
+          "name": "fda_passage_extraction",
+          "executor": "code",
+          "action": "extract all FDA-related passages",
+          "patterns": ["FDA", "Food and Drug Administration", "IND", "NDA", "BLA", "Breakthrough", "Fast Track", "Orphan", "Priority Review", "Accelerated Approval", "pre-IND", "End-of-Phase", "SPA", "CRL", "PDUFA"]
+        },
+        {
+          "step": 2,
+          "name": "sentiment_classification",
+          "executor": "code",
+          "action": "classify each passage as POSITIVE, NEGATIVE, or NEUTRAL",
+          "positive_markers": ["aligned", "agreed", "positive feedback", "constructive", "granted", "designated", "approved"],
+          "negative_markers": ["denied", "refused", "required additional", "concerns", "deficiency", "refuse to file", "CRL"],
+          "output": "classification per passage with section location"
+        },
+        {
+          "step": 3,
+          "name": "asymmetry_check",
+          "executor": "code",
+          "action": "count positive vs negative by section placement",
+          "logic": {
+            "green": "positive in Business AND negative in Business",
+            "yellow": "positive in Business AND negative ONLY in Risk Factors",
+            "red": "positive > 0 AND negative == 0 (one-sided)"
+          }
+        },
+        {
+          "step": 4,
+          "name": "llm_precedent_comparison",
+          "executor": "llm",
+          "trigger": "step 3 output is YELLOW or RED",
+          "prompt_template": "The S-1 describes FDA interactions for {{CANDIDATE}}.\n\nPOSITIVE characterizations (found in {{POS_SECTIONS}}):\n{{POSITIVE_LIST}}\n\nNEGATIVE disclosures (found in {{NEG_SECTIONS}}):\n{{NEGATIVE_LIST}}\n\nIn SEC v. AVEO Pharmaceuticals (LR-24062), the company was charged with fraud for selectively disclosing positive FDA interactions while omitting that the FDA had recommended an additional clinical trial.\n\nIn Tongue v. Sanofi, 816 F.3d 199 (2d Cir. 2016), the court held: '{{TONGUE_HOLDING}}'\n\nCompare this S-1's pattern of FDA disclosure:\n(a) Is there material negative FDA feedback omitted or asymmetrically placed?\n(b) Does the positive characterization create an impression the negative disclosure undermines?\n(c) How does the severity compare to AVEO?",
+          "slot_sources": {
+            "CANDIDATE": "candidate name",
+            "POS_SECTIONS": "step 3 section names",
+            "POSITIVE_LIST": "step 2 positive passages",
+            "NEG_SECTIONS": "step 3 section names",
+            "NEGATIVE_LIST": "step 2 negative passages",
+            "TONGUE_HOLDING": "legal_framework.json -> tongue_v_sanofi.key_quotes.no_obligation_to_disclose_everything"
+          }
+        }
+      ],
+      "thresholds": {
+        "green": "balanced disclosure or no FDA mentions",
+        "yellow": "positive in Business, negative only in Risk Factors",
+        "red": "positive FDA mentions with zero negative disclosures"
+      },
+      "legal_basis_ids": ["rule_408", "omnicare"],
+      "enforcement_precedent_ids": ["aveo_pharma"],
+      "case_law_ids": ["tongue_v_sanofi"],
+      "comment_letter_excerpt_ids": ["excerpt_fda_001", "excerpt_fda_002", "excerpt_fda_003"]
+    },
+    {
+      "id": "pipeline_accuracy",
+      "display_name": "Pipeline Accuracy",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Check whether the S-1 pipeline table/graphic matches text descriptions and ClinicalTrials.gov data.",
+      "requires_ctgov": false,
+      "steps": [
+        {
+          "step": 1,
+          "name": "format_detection",
+          "executor": "code",
+          "action": "detect pipeline format: HTML table or embedded image",
+          "output": "HTML_TABLE | IMAGE"
+        },
+        {
+          "step": 2,
+          "name": "image_fallback",
+          "executor": "code",
+          "trigger": "step 1 output is IMAGE",
+          "output": "YELLOW — 'Pipeline is embedded as an image and cannot be verified programmatically. Manual review recommended.'"
+        },
+        {
+          "step": 3,
+          "name": "table_comparison",
+          "executor": "code",
+          "trigger": "step 1 output is HTML_TABLE",
+          "action": "extract phase claims per candidate from table, compare to text passages",
+          "output": "MATCH | MISMATCH per candidate"
+        },
+        {
+          "step": 4,
+          "name": "overstated_progress_check",
+          "executor": "code",
+          "trigger": "step 1 output is HTML_TABLE",
+          "logic": {
+            "red": "table shows Phase 2 but text only describes Phase 1 data",
+            "yellow": "table shows IND-enabling but no IND filed"
+          }
+        }
+      ],
+      "thresholds": {
+        "green": "HTML table matches text descriptions",
+        "yellow": "image (cannot verify) or minor inconsistency",
+        "red": "table overstates development progress vs text"
+      },
+      "legal_basis_ids": ["rule_408", "section_11"],
+      "comment_letter_excerpt_ids": ["excerpt_phase_003"]
+    },
+    {
+      "id": "red_flag_phrases",
+      "display_name": "Red Flag Phrases",
+      "layer": 1,
+      "pass": "pass_1_crosscutting",
+      "description": "Scan for SEC-challenged safety/efficacy language. Classify each hit as cautionary (GREEN), data-supported (GREEN), or standalone (FLAG).",
+      "requires_ctgov": false,
+      "phrase_source": "reference/red_flag_phrases.txt",
+      "steps": [
+        {
+          "step": 1,
+          "name": "phrase_scan",
+          "executor": "code",
+          "action": "for each phrase in red_flag_phrases.txt, scan all candidate passages",
+          "output": "list of {phrase, sentence, section, page_approx, context_500chars}"
+        },
+        {
+          "step": 2,
+          "name": "context_classification",
+          "executor": "code",
+          "action": "classify each hit into categories",
+          "categories": {
+            "A_CAUTIONARY": {
+              "criteria": "phrase in Risk Factor section OR conditional context (may not be, cannot assure, no guarantee of)",
+              "result": "AUTO GREEN"
+            },
+            "B_SUPPORTED": {
+              "criteria": "quantitative data within 500 chars (n/N, %, AE rates, p-values, dose/response)",
+              "result": "AUTO GREEN"
+            },
+            "C_STANDALONE": {
+              "criteria": "affirmative use, no nearby data, not cautionary",
+              "result": "FLAG for step 3"
+            }
+          }
+        },
+        {
+          "step": 3,
+          "name": "llm_standalone_assessment",
+          "executor": "llm",
+          "trigger": "step 2 has CATEGORY C hits",
+          "prompt_template": "The S-1 uses '{{PHRASE}}' in this context:\n'{{S1_PASSAGE}}'\nSection: {{SECTION}}, approx. page {{PAGE}}\n\nThis usage is:\n- Not in a cautionary/conditional context\n- Not immediately supported by quantitative data\n\nThe SEC has challenged similar language. In a comment letter to {{COMPANY}}, the SEC stated:\n'{{SEC_COMMENT}}'\nThe S-1 language that triggered this comment was:\n'{{TRIGGERED_LANGUAGE}}'\n\nCompare this S-1's usage:\n(a) Comparable — similar standalone use without data support\n(b) Distinguishable — this context provides implicit support\n(c) Worse — more affirmative/absolute than the challenged language",
+          "slot_sources": {
+            "PHRASE": "step 1 matched phrase",
+            "S1_PASSAGE": "step 1 context",
+            "SECTION": "step 1 section name",
+            "PAGE": "step 1 page_approx",
+            "COMPANY": "comment_letter_excerpts.json -> matching topic excerpt.company",
+            "SEC_COMMENT": "comment_letter_excerpts.json -> matching topic excerpt.sec_comment_verbatim",
+            "TRIGGERED_LANGUAGE": "comment_letter_excerpts.json -> matching topic excerpt.s1_language_challenged"
+          }
+        },
+        {
+          "step": 4,
+          "name": "accumulation_check",
+          "executor": "code",
+          "action": "count total STANDALONE instances per phrase",
+          "threshold": "IF any phrase has >10 STANDALONE instances -> PATTERN flag"
+        }
+      ],
+      "thresholds": {
+        "green": "no standalone instances, or all cautionary/supported",
+        "yellow": "standalone instances found but not matching precedent pattern",
+        "red": ">10 standalone instances of same phrase, or closely matching precedent"
+      },
+      "legal_basis_ids": ["rule_408"],
+      "comment_letter_excerpt_ids": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_safety_004", "excerpt_safety_005"]
+    },
+    {
+      "id": "trial_design_comparison",
+      "display_name": "Trial Design Match",
+      "layer": 1,
+      "pass": "pass_2_trial_level",
+      "description": "Compare S-1 trial design descriptions against ClinicalTrials.gov registered design elements.",
+      "requires_ctgov": true,
+      "steps": [
+        {
+          "step": 1,
+          "name": "ctgov_extraction",
+          "executor": "code",
+          "action": "extract design elements from CTgov JSON",
+          "fields": [
+            "protocolSection.designModule.phases",
+            "protocolSection.designModule.designInfo.allocation",
+            "protocolSection.designModule.designInfo.maskingInfo.masking",
+            "protocolSection.designModule.enrollmentInfo.count",
+            "protocolSection.designModule.enrollmentInfo.type",
+            "protocolSection.armsInterventionsModule.armGroups",
+            "protocolSection.outcomesModule.primaryOutcomes",
+            "protocolSection.outcomesModule.secondaryOutcomes"
+          ]
+        },
+        {
+          "step": 2,
+          "name": "s1_element_search",
+          "executor": "code",
+          "action": "for each element, search S-1 passages for match",
+          "element_patterns": {
+            "phase": ["Phase [n]"],
+            "allocation": ["randomized", "non-randomized", "single-arm"],
+            "masking": ["double-blind", "open-label", "single-blind", "placebo-controlled"],
+            "enrollment": ["[number] near patients|subjects|participants|enrolled"],
+            "endpoints": ["each endpoint measure term"]
+          }
+        },
+        {
+          "step": 3,
+          "name": "element_marking",
+          "executor": "code",
+          "action": "mark each element",
+          "statuses": ["MATCH", "ABSENT", "PARTIAL", "MISMATCH"],
+          "color_coding": {
+            "green": "MATCH",
+            "yellow": "PARTIAL or ABSENT (non-critical element)",
+            "red": "MISMATCH or ABSENT (critical element like primary endpoint)"
+          }
+        },
+        {
+          "step": 4,
+          "name": "llm_materiality",
+          "executor": "llm",
+          "trigger": "step 3 has ABSENT or MISMATCH items",
+          "prompt_template": "This trial element is {{STATUS}}:\nCTgov says: {{CTGOV_VALUE}}\nS-1 says: {{S1_PASSAGE}}\n\nThe SEC has required disclosure of this element:\n'{{PRECEDENT_COMMENT}}'\n\nWould a reasonable investor consider this omission/mismatch important?",
+          "slot_sources": {
+            "STATUS": "step 3 status",
+            "CTGOV_VALUE": "step 1 extracted value",
+            "S1_PASSAGE": "step 2 found text or 'not found'",
+            "PRECEDENT_COMMENT": "comment_letter_excerpts.json -> excerpt_trial_design_001 or _002"
+          }
+        }
+      ],
+      "legal_basis_ids": ["rule_408"],
+      "comment_letter_excerpt_ids": ["excerpt_trial_design_001", "excerpt_trial_design_002", "excerpt_trial_design_003"]
+    },
+    {
+      "id": "endpoints_statistics",
+      "display_name": "Endpoint Hierarchy",
+      "layer": 1,
+      "pass": "pass_2_trial_level",
+      "description": "The Harkonen Check. Verify endpoint hierarchy is clear, primary results prominently disclosed, no leading with secondary/post-hoc while burying primary failure.",
+      "requires_ctgov": true,
+      "steps": [
+        {
+          "step": 1,
+          "name": "endpoint_extraction",
+          "executor": "code",
+          "action": "extract endpoint hierarchy from CTgov",
+          "fields": ["primaryOutcomes", "secondaryOutcomes", "resultsSection.outcomeMeasures (if exists)"],
+          "output": "endpoint list with type and results (if posted)"
+        },
+        {
+          "step": 2,
+          "name": "s1_endpoint_mapping",
+          "executor": "code",
+          "action": "map S-1 passages to endpoints",
+          "output": "DISCUSSED | NOT_DISCUSSED per endpoint"
+        },
+        {
+          "step": 3,
+          "name": "headline_identification",
+          "executor": "code",
+          "action": "identify S-1 headline finding (first efficacy result in Prospectus Summary or Business section)",
+          "output": "headline finding text and section"
+        },
+        {
+          "step": 4,
+          "name": "harkonen_pattern_check",
+          "executor": "code",
+          "action": "check three conditions",
+          "conditions": {
+            "A": "headline finding is from SECONDARY or unregistered endpoint",
+            "B": "PRIMARY endpoint not discussed OR showed null/negative result not highlighted",
+            "C": "S-1 does not label headline finding as secondary/exploratory"
+          },
+          "logic": {
+            "red": "A AND B AND C (Harkonen pattern)",
+            "yellow": "A AND B but S-1 labels it as secondary",
+            "green": "primary endpoint prominently discussed"
+          }
+        },
+        {
+          "step": 5,
+          "name": "llm_precedent_comparison",
+          "executor": "llm",
+          "trigger": "step 4 is YELLOW or RED",
+          "prompt_template": "ENDPOINT HIERARCHY ANALYSIS\n\nClinicalTrials.gov shows:\nPRIMARY endpoint: {{PRIMARY_MEASURE}} -- Result: {{PRIMARY_RESULT}}\nSECONDARY endpoints: {{SECONDARY_LIST}} -- Results: {{SECONDARY_RESULTS}}\n\nThe S-1 presents this trial as follows:\nHEADLINE (first mention): '{{S1_HEADLINE}}' ({{SECTION}}, p. {{PAGE}})\nPrimary endpoint discussion: '{{S1_PRIMARY_QUOTE}}'\n\nPRECEDENT COMPARISON:\n\nIn United States v. Harkonen (InterMune):\n- Primary endpoint: PFS -> FAILED\n- Press release headline: '{{HARKONEN_HEADLINE}}'\n- Post-hoc subgroup presented as primary finding\n- Criminal wire fraud conviction\n\nIn SEC v. Clovis Oncology:\n- Reported 60% ORR using unconfirmed responses\n- Confirmed ORR was 28%\n- $20M penalty\n\nCompare:\n1. Is the headline from the primary endpoint?\n2. If not, is the primary also disclosed?\n3. Is the hierarchy clearly stated?\n4. Rate similarity to Harkonen: HIGH / MODERATE / LOW / NOT APPLICABLE",
+          "slot_sources": {
+            "PRIMARY_MEASURE": "step 1 primary endpoints",
+            "PRIMARY_RESULT": "step 1 results if posted",
+            "SECONDARY_LIST": "step 1 secondary endpoints",
+            "SECONDARY_RESULTS": "step 1 results if posted",
+            "S1_HEADLINE": "step 3 headline text",
+            "SECTION": "step 3 section",
+            "PAGE": "step 3 page",
+            "S1_PRIMARY_QUOTE": "step 2 primary endpoint S-1 text or 'NOT FOUND'",
+            "HARKONEN_HEADLINE": "legal_framework.json -> harkonen_intermune.facts.fraudulent_press_release_headline"
+          }
+        }
+      ],
+      "legal_basis_ids": ["rule_408", "matrixx", "tsc_industries"],
+      "enforcement_precedent_ids": ["harkonen_intermune", "clovis"],
+      "comment_letter_excerpt_ids": ["excerpt_stats_001", "excerpt_stats_002", "excerpt_stats_003", "excerpt_trial_design_003"]
+    },
+    {
+      "id": "safety_comparison",
+      "display_name": "Safety Data Match",
+      "layer": 1,
+      "pass": "pass_2_trial_level",
+      "description": "Compare S-1 safety characterizations against CTgov adverse event data. Check FDAAA 801 results posting compliance.",
+      "requires_ctgov": true,
+      "steps": [
+        {
+          "step": 1,
+          "name": "ctgov_safety_extraction",
+          "executor": "code",
+          "action": "extract AE data from CTgov results",
+          "fields": ["adverseEventsModule.eventGroups", "adverseEventsModule.seriousEvents", "adverseEventsModule.otherEvents"],
+          "calculations": ["overall AE rate", "SAE rate", "death rate per arm"]
+        },
+        {
+          "step": 2,
+          "name": "s1_safety_extraction",
+          "executor": "code",
+          "action": "extract safety characterizations from S-1",
+          "patterns": ["well-tolerated", "safe", "safety profile", "adverse", "SAE", "serious adverse", "TEAE", "treatment-emergent", "death"]
+        },
+        {
+          "step": 3,
+          "name": "direct_comparison",
+          "executor": "code",
+          "action": "compare each S-1 claim to CTgov data",
+          "output": "SUPPORTED | CONTRADICTED | UNVERIFIABLE per claim"
+        },
+        {
+          "step": 4,
+          "name": "fdaaa_801_check",
+          "executor": "code",
+          "action": "check results posting compliance",
+          "logic": {
+            "red": "status == COMPLETED AND no resultsSection AND months_since_completion > 12",
+            "yellow": "status == COMPLETED AND no resultsSection AND months_since_completion <= 12",
+            "info": "results posted or trial not yet completed"
+          }
+        },
+        {
+          "step": 5,
+          "name": "llm_discrepancy_assessment",
+          "executor": "llm",
+          "trigger": "step 3 has any CONTRADICTED",
+          "prompt_template": "SAFETY DATA COMPARISON\n\nThe S-1 states: '{{S1_SAFETY_CLAIM}}' ({{SECTION}}, p. {{PAGE}})\n\nClinicalTrials.gov data:\n- Overall AE rate: {{DRUG_AE}} vs {{PLACEBO_AE}}\n- SAE rate: {{DRUG_SAE}} vs {{PLACEBO_SAE}}\n- Deaths: {{DRUG_DEATHS}} vs {{PLACEBO_DEATHS}}\n- Top 5 AEs: {{AE_LIST}}\n\nThe S-1's characterization appears {{STATUS}} because {{REASON}}.\n\nThe SEC has challenged similar characterizations:\n'{{PRECEDENT_COMMENT}}'\n\nCompare the severity of the discrepancy to the language the SEC challenged. How material is the gap?",
+          "slot_sources": {
+            "S1_SAFETY_CLAIM": "step 2 matched text",
+            "SECTION": "passage section",
+            "PAGE": "passage page_approx",
+            "DRUG_AE": "step 1 calculation",
+            "PLACEBO_AE": "step 1 calculation",
+            "DRUG_SAE": "step 1 calculation",
+            "PLACEBO_SAE": "step 1 calculation",
+            "DRUG_DEATHS": "step 1 extraction",
+            "PLACEBO_DEATHS": "step 1 extraction",
+            "AE_LIST": "step 1 top 5 AEs",
+            "STATUS": "step 3 result",
+            "REASON": "step 3 reason",
+            "PRECEDENT_COMMENT": "comment_letter_excerpts.json -> excerpt_safety_003.sec_comment_verbatim"
+          }
+        }
+      ],
+      "legal_basis_ids": ["matrixx", "omnicare", "rule_408", "fdaaa_801"],
+      "comment_letter_excerpt_ids": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_safety_005"]
+    },
+    {
+      "id": "data_maturity",
+      "display_name": "Data Maturity",
+      "layer": 1,
+      "pass": "pass_2_trial_level",
+      "description": "Check whether preliminary/interim data is labeled as such. Flag conclusory language for immature data.",
+      "requires_ctgov": true,
+      "steps": [
+        {
+          "step": 1,
+          "name": "trial_status_check",
+          "executor": "code",
+          "action": "determine trial status from CTgov",
+          "fields": ["overallStatus", "resultsSection exists?"],
+          "output": "status and results_posted boolean"
+        },
+        {
+          "step": 2,
+          "name": "labeling_check",
+          "executor": "code",
+          "trigger": "status != COMPLETED",
+          "action": "search S-1 for data maturity labels",
+          "patterns": ["interim", "preliminary", "topline", "initial", "data cutoff"],
+          "output": "LABELED_PRELIMINARY | NOT_LABELED",
+          "threshold": "IF NOT_LABELED and trial ongoing -> YELLOW"
+        },
+        {
+          "step": 3,
+          "name": "conclusory_language_check",
+          "executor": "code",
+          "trigger": "trial ongoing OR no results OR S-1 says preliminary",
+          "action": "search for conclusory verbs in same passages",
+          "patterns": ["demonstrated", "established", "proven", "confirmed", "showed", "validated"],
+          "output": "count of conclusory terms"
+        },
+        {
+          "step": 4,
+          "name": "llm_maturity_assessment",
+          "executor": "llm",
+          "trigger": "step 3 finds conclusory terms",
+          "prompt_template": "The S-1 presents data from {{TRIAL_STATUS}} and uses:\n'{{S1_PASSAGE}}'\n\nThe conclusory term '{{VERB}}' is used for data that is {{DATA_MATURITY}}.\n\nIn In re Rigel Pharmaceuticals, 697 F.3d 869 (9th Cir. 2012), the court held:\n'{{RIGEL_HOLDING}}'\n\nThe SEC has challenged conclusory language for preliminary data:\n'{{PRECEDENT_COMMENT}}'\n\nIs the conclusory framing appropriate given the data maturity?",
+          "slot_sources": {
+            "TRIAL_STATUS": "step 1 status",
+            "S1_PASSAGE": "step 3 passage with conclusory term",
+            "VERB": "step 3 matched term",
+            "DATA_MATURITY": "step 1 status description",
+            "RIGEL_HOLDING": "legal_framework.json -> rigel_pharma.key_quotes.partial_disclosure_standard",
+            "PRECEDENT_COMMENT": "comment_letter_excerpts.json -> excerpt_trial_design_003.sec_comment_verbatim"
+          }
+        }
+      ],
+      "legal_basis_ids": ["rule_408", "rigel_pharma"],
+      "comment_letter_excerpt_ids": ["excerpt_trial_design_003", "excerpt_stats_002"]
+    }
+  ],
+  "escalation_checks": [
+    {
+      "id": "omnicare_test",
+      "display_name": "Omnicare Opinion Test",
+      "layer": 2,
+      "trigger": "Layer 1 YELLOW or RED involving opinion/characterization",
+      "legal_basis_id": "omnicare",
+      "prompt_template_id": "omnicare_escalation",
+      "output_format": {
+        "columns": ["Statement", "Impression Created", "Test 2 (Embedded Fact)", "Test 3 (Contrary Facts)", "Fairly Aligns?", "Risk Level"],
+        "risk_levels": ["SIGNIFICANT RISK", "MODERATE RISK", "LOW RISK", "NO CONCERN"]
+      }
+    },
+    {
+      "id": "rule_408_pattern",
+      "display_name": "Rule 408 Pattern Analysis",
+      "layer": 2,
+      "trigger": "Multiple YELLOW or RED findings from Layer 1",
+      "legal_basis_id": "rule_408",
+      "thresholds": {
+        "green": "favors_company < 50% or total findings < 3",
+        "yellow": "50-75% favors company",
+        "red": ">= 75% favors company"
+      },
+      "output_format": {
+        "columns": ["#", "Omission/Gap", "Direction", "Source Check"]
+      }
+    },
+    {
+      "id": "matrixx_check",
+      "display_name": "Matrixx Significance Check",
+      "layer": 2,
+      "trigger": "Any finding involving small trial (N<30) or statistical significance argument",
+      "legal_basis_id": "matrixx",
+      "note": "Defense-blocker, not independent check. Prevents dismissal of findings on statistical significance grounds."
+    }
+  ]
+}
