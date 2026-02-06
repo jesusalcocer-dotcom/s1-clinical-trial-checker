@@ -3,7 +3,7 @@ name: s-1-clinical-trial-checker
 description: Analyze S-1 or F-1 registration statements for clinical trial disclosure adequacy by comparing against ClinicalTrials.gov data. Built by Jesus Alcocer for Norm.ai.
 metadata:
   version: "5.0"
-  dependencies: python>=3.8, requests, beautifulsoup4, lxml
+  dependencies: python>=3.8, requests, beautifulsoup4, lxml, python-docx
 ---
 
 # S-1 Clinical Trial Disclosure Checker (v5)
@@ -43,6 +43,46 @@ check(s1_text, standard, precedent_language) -> {status, evidence, reasoning}
    files; apply the coded rules; quote actual precedent language.
 5. **RISK AREAS, NOT LEGAL CONCLUSIONS**: Say "raises questions under"
    not "fails" or "violates."
+6. **SHOW EVERYTHING IN CHAT**: The attorney reviewing this will NOT
+   read code files. Every result — every check, every table, every
+   escalation — must be displayed in the chat as it happens. Never
+   compile results internally and dump them at the end.
+7. **NARRATE THE LEGAL JOURNEY**: At every phase transition, tell the
+   user what part of the legal analysis they are entering and why.
+   The user should always know where they are in the three-step
+   framework.
+
+---
+
+## DISPLAY AND FORMAT RULES
+
+These rules apply to ALL output shown in the chat:
+
+**Naming:** Use descriptive check names, never numbers.
+- Say "Preclinical Framing" — NOT "CHECK 3" or "Check 3:"
+- Say "Endpoint Hierarchy" — NOT "CHECK 9"
+- In summary tables, use the descriptive name in the Check column
+
+**Status symbols:** Use plain symbols, never colored emoji.
+- ✓ Adequate (not "GREEN" or emoji)
+- ⚠ Attention Area (not "YELLOW" or emoji)
+- ✗ Significant Concern (not "RED" or emoji)
+
+**Show as you go:** Display each check result in the chat immediately
+after completing it. Do NOT batch results or compile them internally.
+The user must see each audit block as it is produced.
+
+**Phase narration:** Before starting each phase, display a brief
+narrative that connects it to the legal framework:
+```
+---
+## STEP [1/2/3]: [Question from framework]
+
+[1-2 sentences explaining what this step tests and which legal
+authorities govern it, referencing back to the Legal Framework
+section shown at the start.]
+---
+```
 
 ---
 
@@ -86,10 +126,12 @@ Final report with all findings, sources, and reasoning
 
 ### D. Legal Framework
 
-This section explains the legal foundation for the entire analysis.
-Every check, every standard, and every escalation test traces back
-to the authorities described here. Read this first — it explains
-**why** we check what we check.
+**DISPLAY MANDATE:** You MUST display the ENTIRE section D below in
+the chat — every subsection (D.1 through D.8), every table, every
+case description. Do NOT abbreviate, summarize, or truncate. The
+attorney reviewing this output needs to see the full legal framework
+before any analysis begins. This is the foundation that makes every
+subsequent finding intelligible.
 
 For the full legal brief with all verbatim source quotations, see
 `reference/legal_brief.md`.
@@ -390,32 +432,36 @@ established standards.
 
 ### E. Checklist Preview
 
-### Checklist Structure
-
 **STEP 1: Are the drug candidates described correctly?**
-  - A. Basic Completeness
-    - Check 1: Basic Disclosure Elements
-    - Check 2: Phase Label Accuracy
-    - Check 6: Pipeline Accuracy
-  - B. Safety & Efficacy Language
-    - Check 7: Red Flag Phrases
-    - Check 3: Preclinical Framing
-    - Check 4: Comparative Claims
-  - C. FDA Communications & Maturity
-    - Check 5: FDA Communications
-    - Check 11: Data Maturity
+*(Cross-cutting S-1 language — governed by Rule 408 + SEC comment letters)*
+
+  A. Basic Completeness
+    - Basic Disclosure Elements
+    - Phase Label Accuracy
+    - Pipeline Accuracy
+  B. Safety & Efficacy Language
+    - Red Flag Phrases
+    - Preclinical Framing
+    - Comparative Claims
+  C. FDA Communications & Maturity
+    - FDA Communications Balance
+    - Data Maturity
 
 **STEP 2: Are the clinical studies described correctly?**
-  - Check 8: Trial Design Match
-  - Check 9: Endpoint Hierarchy (Harkonen Check)
-  - Check 10: Safety Data Match
-  - Check 11: Data Maturity
-  - FDAAA 801: Results Posting Compliance
+*(Per-trial comparison — S-1 vs. ClinicalTrials.gov)*
+
+  - Trial Design Match
+  - Endpoint Hierarchy (the Harkonen pattern)
+  - Safety Data Match
+  - Data Maturity
+  - FDAAA 801 Compliance
 
 **STEP 3: Does the overall pattern mislead?**
-  - Omnicare Opinion Test (575 U.S. 175)
-  - Rule 408 Pattern Analysis (17 C.F.R. § 230.408)
-  - Matrixx Defense Blocker (563 U.S. 27)
+*(Supreme Court standards — triggered only by ⚠ or ✗ findings)*
+
+  - Rule 408 Pattern Analysis — systematic one-sidedness?
+  - Omnicare Opinion Test — opinions omitting contrary facts?
+  - Matrixx Defense Blocker — protecting findings from dismissal
 
 ### F. Enter a Ticker
 
@@ -482,6 +528,34 @@ Which candidate would you like me to analyze?
 
 **Before starting, read**: `reference/operationalized_checks.json`
 
+**Display this narration in chat before running any checks:**
+
+```
+---
+## STEP 1: Are the Drug Candidates Described Correctly?
+
+We now examine the S-1's language about {candidate_name} across all
+sections. This step is governed by Rule 408 — the completeness
+standard — which requires that any discussion of a clinical program
+include enough information to be accurate and not misleading.
+
+The specific standards come from SEC comment letters: written
+feedback the SEC has sent to other biotech companies identifying
+the exact same kinds of disclosure problems we are checking for.
+Every check below traces to specific comment letter language.
+
+We will examine:
+  A. Basic Completeness — Is the drug properly identified?
+  B. Safety & Efficacy Language — Does the S-1 claim more than
+     the data supports?
+  C. FDA Communications — Is the FDA story told symmetrically?
+
+Each check will show you: the legal standard, the exact S-1 text
+evaluated, step-by-step findings, precedent comparison, and a
+reasoned determination.
+---
+```
+
 Run Checks 1-7 using the candidate's passages from the parser.
 
 For each check, follow the operationalized steps in the reference file.
@@ -490,13 +564,13 @@ values filled in.
 
 ### Per-Check Output (MANDATORY for every check, regardless of status)
 
-For **every** check (GREEN, YELLOW, and RED), present the full audit
-block. This is the core of auditability — without it, the summary
-table is meaningless.
+For **every** check, present the full audit block **in the chat
+immediately** after completing it. This is the core of auditability.
+Without it, the summary table is meaningless.
 
 ```
 ---
-### CHECK [#]: [Check Name]
+### [Check Name]
 
 **Legal Standard:**
 [Full text of the governing rule or standard from reference files]
@@ -508,9 +582,11 @@ Authority: [specific rule, case, or SEC comment letter with citation]
 
 [If multiple passages are relevant, quote each with section/page.]
 
-**What the Check Looked For:**
-[1-2 sentences: what the check tests — e.g., "whether combined phase
-labels are explained with distinct portions described"]
+**What This Check Tests:**
+[1-2 sentences explaining what this check looks for and why — connect
+to the legal framework shown at the start. E.g., "As explained in
+D.3, the SEC has told companies like Sensei Biotherapeutics to remove
+combined phase labels unless they explain what each portion involves."]
 
 **Step-by-Step Findings:**
 1. [Code step]: [what was searched/grepped] → [result]
@@ -524,19 +600,23 @@ In [case/letter], the SEC addressed similar language:
 - Filing stated: "[EXACT quote from precedent filing]"
 - SEC/court found: "[EXACT quote from comment/holding]"
 - Required action: [what the SEC demanded]
-Source: [comparison_pair id — company, date]
+Source: [company, date]
 
-**Determination:** [GREEN/YELLOW/RED]
+**Determination:** [✓ Adequate / ⚠ Attention Area / ✗ Significant Concern]
 [2-3 sentence reasoned explanation of why this status was assigned,
 referencing the specific S-1 text vs. the standard.]
 ```
 
-**If YELLOW or RED — Escalation:**
+**If ⚠ or ✗ — Escalation:**
 
 After the determination, immediately show the escalation analysis:
 
 ```
 **ESCALATION: [Escalation type — e.g., Omnicare Test / AVEO Test]**
+
+**Why this escalation applies:** [Connect to D.4/D.5 — e.g., "As
+explained in D.4, AVEO was charged with fraud for exactly this
+pattern — selective disclosure of positive FDA interactions."]
 
 Prompt sent to LLM:
 > [Show the actual filled-in escalation prompt with all {{slots}}
@@ -550,32 +630,32 @@ Escalation Rating: [SIGNIFICANT RISK / MODERATE RISK / LOW RISK / NO CONCERN]
 
 ### Flow Rules
 
-- **GREEN**: Show full audit block. Continue to next check automatically.
-- **YELLOW**: Show full audit block + escalation. Pause:
+- **✓ Adequate**: Show full audit block in chat. Continue automatically.
+- **⚠ Attention Area**: Show full audit block + escalation in chat. Pause:
   ```
   ⚠ Attention area identified. Continue, or discuss this finding?
   ```
-- **RED**: Show full audit block + escalation + research augmentation
-  (see RESEARCH AUGMENTATION section). Pause:
+- **✗ Significant Concern**: Show full audit block + escalation +
+  research augmentation (see RESEARCH AUGMENTATION section) in chat. Pause:
   ```
-  ⚠ Significant concern identified. Continue, or discuss this finding?
+  ✗ Significant concern identified. Continue, or discuss this finding?
   ```
 
-### Pass 1 Summary Table
+### Step 1 Summary Table
 
-After ALL checks are presented with full audit blocks, show the
-summary table:
+After ALL checks are presented with full audit blocks in chat, show:
 
 ```
-## PASS 1 SUMMARY
+## STEP 1 SUMMARY: Cross-Cutting S-1 Checks
 
-| # | Check | Status | Key Finding | Authority |
-|---|-------|--------|-------------|-----------|
-| 1 | ...   | ...    | ...         | ...       |
+| Check | Status | Key Finding | Authority |
+|-------|--------|-------------|-----------|
+| Basic Disclosure    | ✓/⚠/✗ | ...  | ...       |
+| Phase Labels        | ✓/⚠/✗ | ...  | ...       |
+| Preclinical Framing | ✓/⚠/✗ | ...  | ...       |
+| ...                 | ...    | ...  | ...       |
 
 [n] adequate | [n] attention areas | [n] significant concerns
-
-Moving to trial-level comparison...
 ```
 
 ---
@@ -587,24 +667,66 @@ python scripts/ctgov_fetch.py fetch-all --drug "{candidate_name}" \
     --output-dir .
 ```
 
-Present:
+**Display this narration in chat:**
+
+```
+---
+We have completed Step 1 (cross-cutting S-1 language checks). We now
+need to compare what the S-1 says about specific clinical trials
+against the federal registry on ClinicalTrials.gov.
+
+Let me fetch the publicly available trial data for {candidate_name}.
+---
+```
+
+Present the trial table in chat:
 ```
 I found {n} studies for {candidate} on ClinicalTrials.gov:
 
-  NCT          Title                         Phase    Status      Results
-  NCT________  {title}                       {phase}  COMPLETED   POSTED
-  NCT________  {title}                       {phase}  TERMINATED  NOT POSTED
+  NCT ID         Title                      Phase    Status      Results
+  NCT________    {title}                    {phase}  COMPLETED   POSTED
+  NCT________    {title}                    {phase}  TERMINATED  NOT POSTED
   ...
 
-Which trials should I analyze?
-(Enter numbers, 'all', or specific NCT IDs)
+Which trials should I compare against the S-1?
+(Enter trial numbers, 'all', or specific NCT IDs)
 ```
 
-**GATE 2**: User selects which trials to analyze.
+**GATE 2 — MANDATORY**: You MUST wait for the user to select which
+trials to analyze. Do NOT auto-proceed. Do NOT assume "all." The
+user must explicitly confirm.
 
 ---
 
 ## PHASE 5: LAYER 1 PASS 2 — TRIAL-LEVEL COMPARISON
+
+**Display this narration in chat before running any checks:**
+
+```
+---
+## STEP 2: Are the Clinical Studies Described Correctly?
+
+We now compare what the S-1 says about each selected trial against
+the authoritative federal record on ClinicalTrials.gov. This step
+is governed by Rule 408 and the SEC comment letter standards from
+Immunocore, Maze, and Stealth BioTherapeutics, which define exactly
+what trial-level information investors need.
+
+ClinicalTrials.gov is a legally mandated public record. Where the
+S-1 and ClinicalTrials.gov disagree, one is wrong.
+
+For each trial we will show:
+  1. Disclosure Inventory — every statement the S-1 makes about
+     this trial
+  2. Design Comparison — element-by-element side-by-side
+  3. Full audit blocks for: Trial Design Match, Endpoint Hierarchy,
+     Safety Data Match, Data Maturity, and FDAAA 801 compliance
+
+This is also where the most serious enforcement precedents apply:
+the Harkonen criminal conviction (burying a failed primary endpoint)
+and the Clovis $20M penalty (misrepresenting response rates).
+---
+```
 
 Run the comparison builder:
 ```bash
@@ -621,41 +743,49 @@ comparison_builder output and the structured CTgov JSON files.
 For studies WITH results: full comparison (design + results + safety).
 For studies WITHOUT results: design-only check.
 
-### Per-Trial Output
+### Per-Trial Output (display ALL in chat as you go)
 
-For each selected trial, present ALL of the following in order:
+For each selected trial, present ALL of the following in order
+**in the chat** — do not compile internally:
 
 **TABLE 1: Disclosure Inventory** — Everything the S-1 says about
 this trial (presented first for context):
 
-| # | S-1 Statement (exact quote) | Section | Page (approx) |
-|---|---------------------------|---------|---------------|
+| S-1 Statement (exact quote) | Section | Page (approx) |
+|---------------------------|---------|---------------|
 
 **TABLE 2: Design Comparison** — Code-generated side-by-side:
 
 | Element | ClinicalTrials.gov | S-1 Says | Status |
 |---------|--------------------|----------|--------|
 
-Color coding:
-- ✓ GREEN = Match — element verified
-- ✗ RED = Mismatch — discrepancy found
-- ≈ YELLOW = Partial Match — incomplete
-- ⬜ UNVERIFIABLE — cannot be checked
+Status symbols:
+- ✓ Match — element verified
+- ✗ Mismatch — discrepancy found
+- ≈ Partial — incomplete
+- ⬜ Unverifiable — cannot be checked
 
-**Then, for each of Checks 8-11**, present the same full audit block
-as Pass 1 (legal standard, S-1 text, step-by-step findings, precedent
-comparison, determination, and escalation if YELLOW/RED). See the
-**Per-Check Output** template in Phase 3.
+**Then, for each of the trial-level checks** (Trial Design Match,
+Endpoint Hierarchy, Safety Data Match, Data Maturity, FDAAA 801),
+present the same full audit block as Step 1 — legal standard, S-1
+text, step-by-step findings, precedent comparison, determination,
+and escalation if ⚠ or ✗. See the **Per-Check Output** template
+in Phase 3.
 
-### Pass 2 Summary Table
+### Step 2 Summary Table
 
-After all per-trial check audit blocks, show:
+After all per-trial check audit blocks are shown in chat:
 
 ```
-## PASS 2 SUMMARY — {NCT_ID}: {drug}, {indication}
+## STEP 2 SUMMARY — {NCT_ID}: {drug}, {indication}
 
-| # | Check | Status | Key Finding | Authority | CTgov Data Point |
-|---|-------|--------|-------------|-----------|-----------------|
+| Check | Status | Key Finding | Authority | CTgov Data Point |
+|-------|--------|-------------|-----------|-----------------|
+| Trial Design Match  | ✓/⚠/✗ | ... | ... | ... |
+| Endpoint Hierarchy  | ✓/⚠/✗ | ... | ... | ... |
+| Safety Data Match   | ✓/⚠/✗ | ... | ... | ... |
+| Data Maturity       | ✓/⚠/✗ | ... | ... | ... |
+| FDAAA 801           | ✓/⚠/✗ | ... | ... | ... |
 
 [n] adequate | [n] attention areas | [n] significant concerns
 ```
@@ -664,182 +794,296 @@ After all per-trial check audit blocks, show:
 
 ## PHASE 6: LAYER 2 — ESCALATION SWEEP
 
-**Trigger**: Any YELLOW or RED finding from Layer 1.
+**Trigger**: Any ⚠ or ✗ finding from Steps 1-2.
 
-If all Layer 1 findings are GREEN, **skip Layer 2** and go to the report.
+If all findings are ✓ Adequate, **skip Layer 2** and go to the report.
 
-### Layer 2: Escalation Assessment
+**Display this narration in chat:**
 
-When Layer 1 checks produce YELLOW or RED findings, three escalation
-tests fire. **Each must show its full reasoning, not just a result.**
+```
+---
+## STEP 3: Does the Overall Pattern Mislead?
+
+Steps 1 and 2 examined individual statements and individual data
+points. We now step back and ask: taken together, do the findings
+create a misleading picture?
+
+This is where the Supreme Court standards apply. As explained in
+the Legal Framework (D.5):
+
+- The **Omnicare test** asks whether opinion statements in the S-1
+  omit known contrary facts — because the Supreme Court held that
+  opinions can create Section 11 liability even if genuinely held.
+
+- The **Rule 408 pattern analysis** asks whether the omissions and
+  gaps all point in the same direction — because individually
+  borderline issues become material when they systematically favor
+  the company.
+
+- The **Matrixx defense blocker** prevents dismissing any of our
+  findings on the grounds that results weren't statistically
+  significant — because the Supreme Court held there is no bright-
+  line significance threshold for materiality.
+
+These three tests determine whether the attention areas identified
+in Steps 1-2 rise to the level of genuine legal concern.
+---
+```
 
 **Read**: `reference/guardrails.json` for exact procedures, table
 formats, and calibration language.
 
-#### 1. Rule 408 Pattern Analysis (17 C.F.R. § 230.408)
+### Rule 408 Pattern Analysis
 
-Present the full analysis:
+**What this tests and why:** Rule 408 (17 C.F.R. § 230.408) requires
+that the S-1 not be misleading. Individual omissions may each be
+borderline. But if every omission favors the company, the cumulative
+pattern itself is the problem. (See D.2 — this is the completeness
+standard in action across all findings.)
+
+Present the full analysis in chat:
 
 ```
-### RULE 408 PATTERN ANALYSIS
+### Rule 408 Pattern Analysis
 
 **Legal Standard:**
 Rule 408 (17 C.F.R. § 230.408): "[Full text from reference files]"
 
 **Findings Table:**
-| # | Finding | Omission/Gap | Direction | Source Check |
-|---|---------|-------------|-----------|-------------|
-[Classify each YELLOW/RED finding as FAVORS_COMPANY / NEUTRAL / DISFAVORS_COMPANY]
+| Finding | Omission/Gap | Direction | Source Check |
+|---------|-------------|-----------|-------------|
+[Classify each ⚠/✗ finding: FAVORS COMPANY / NEUTRAL / DISFAVORS COMPANY]
 
 **Calculation:**
 [n] findings total, [n] favor company = [pct]%
-Threshold: <50% GREEN | 50-75% YELLOW | >75% RED
+Threshold: <50% ✓ Adequate | 50-75% ⚠ Attention | >75% ✗ Concern
 
-**LLM Assessment** (if YELLOW or RED):
+**LLM Assessment** (if ⚠ or ✗):
 Prompt: [show the filled-in Rule 408 prompt]
 Response: [full LLM response]
 
-**Determination:** [GREEN/YELLOW/RED]
+**Determination:** [✓/⚠/✗]
 [Reasoned explanation]
 ```
 
-#### 2. Omnicare Opinion Test (575 U.S. 175, 2015)
+### Omnicare Opinion Test
 
-For each opinion statement flagged in Layer 1:
+**What this tests and why:** As explained in D.5, the Supreme Court
+held in *Omnicare v. Laborers* (2015) that opinion statements in an
+S-1 can create strict liability if they (a) embed false factual
+claims or (b) omit known contrary facts. This test applies to each
+opinion statement flagged in Steps 1-2 — statements like "well-
+tolerated," "demonstrated clinical activity," or "promising results."
+
+For each flagged opinion statement, present in chat:
 
 ```
-### OMNICARE OPINION TEST — [Statement description]
+### Omnicare Opinion Test — "[Short description of statement]"
 
 **Legal Standard:**
 Omnicare, Inc. v. Laborers District Council, 575 U.S. 175 (2015):
 - Test 1 (Embedded Facts): "[exact quote from reference]"
 - Test 2 (Omitted Contrary Facts): "[exact quote from reference]"
-- Test 3 (Implied Basis): "[exact quote from reference]"
 - Limiting Principle: "[exact quote from reference]"
 
 **S-1 Opinion Statement:**
 > "[EXACT S-1 text]" — Section: [name], Page: ~[page]
 
 **Known Contrary Facts:**
-[List contrary facts from CTgov or other sources]
+[List specific contrary facts found in Steps 1-2 — CTgov data,
+missing endpoints, SAEs, etc.]
 
 **Three-Part Test:**
-- Test 1: [Does the opinion embed a factual claim? Analysis...]
-- Test 2: [Are contrary facts omitted? Analysis...]
-- Test 3: [Does it imply a stronger inquiry basis? Analysis...]
-- Limiting Principle: [Genuine trigger or normal opinion? Analysis...]
+- Test 1 (Embedded Facts): [Does this opinion embed a factual claim?
+  Is that claim supported by the data we found? Analysis...]
+- Test 2 (Omitted Contrary Facts): [What facts cut against this
+  opinion? Are they disclosed in the S-1? Analysis...]
+- Limiting Principle: [Is this normal corporate optimism, or would
+  it mislead a reasonable investor? Analysis...]
 
 **Determination:** [SIGNIFICANT RISK / MODERATE RISK / LOW RISK / NO CONCERN]
 [Reasoned explanation]
 ```
 
-#### 3. Matrixx Defense Blocker (563 U.S. 27, 2011)
+### Matrixx Defense Blocker
+
+**What this tests and why:** As explained in D.5, the Supreme Court
+in *Matrixx v. Siracusano* (2011) held there is no bright-line
+statistical significance threshold for materiality. This is not a
+separate "check" — it is a shield that prevents dismissing findings
+from Steps 1-2 on the grounds that trial data wasn't statistically
+significant or that sample sizes were too small.
 
 ```
-### MATRIXX DEFENSE BLOCKER
+### Matrixx Defense Blocker
 
 **Legal Standard:**
 Matrixx Initiatives v. Siracusano, 563 U.S. 27 (2011):
-"[Exact quote — statistical significance is not required]"
+"[Exact holding — no bright-line statistical significance threshold]"
 
-**Application:**
-[For each finding where a "not statistically significant" defense
-might apply, explain why Matrixx blocks that defense]
+**Application to this S-1:**
+[For each finding where statistical significance or sample size
+could be raised as a defense, explain:
+- What the finding is
+- Why a "not significant" defense might be attempted
+- Why Matrixx blocks that defense]
 
-**Determination:** [Whether any findings are protected from dismissal]
+**Conclusion:** [Which findings, if any, are protected from dismissal
+by Matrixx]
 ```
 
 ---
 
-## PHASE 7: AGGREGATE REPORT
+## PHASE 7: FINAL REPORT
 
-The aggregate report is the complete record of the analysis. It
-**MUST** contain the full audit blocks from every phase — not
-abbreviated summaries. The report structure:
+The final report is delivered in TWO forms:
 
-```markdown
-# S-1 CLINICAL TRIAL DISCLOSURE ANALYSIS
+1. **In chat**: A structured summary with the key findings, shown
+   immediately after the analysis completes
+2. **As a Word document (.docx)**: The complete, auditable record
+   containing the full legal framework, all audit blocks, and all
+   evidence — saved as a file the attorney can download
 
-## FILING INFORMATION
-Company: {name}
-Ticker: {ticker}
+### 7A. Chat Summary (display immediately)
+
+After completing all steps, display this structured summary in chat:
+
+```
+---
+# S-1 DISCLOSURE ANALYSIS COMPLETE
+
+## Filing
+Company: {name} | Ticker: {ticker}
 Filing: {form_type}, filed {date}
 Analysis date: {today}
 Tool: S-1 Clinical Trial Disclosure Checker v5 (Jesus Alcocer, Norm.ai)
+Candidate: {candidate_name} | Indication: {indication}
+Trials analyzed: {list of NCT IDs}
 
-## CANDIDATE ANALYZED
-| Candidate | Indications | Phase | Studies Checked |
-|-----------|-------------|-------|-----------------|
+## Executive Summary
 
-## PASS 1: CROSS-CUTTING FINDINGS
+[n] findings identified across [n] checks.
+[n] adequate | [n] attention areas | [n] significant concerns
 
-[Include the FULL per-check audit block for EVERY check 1-7.
-Each block must contain: legal standard, S-1 text evaluated,
-step-by-step findings, precedent comparison, determination,
-and escalation (if YELLOW/RED). See Per-Check Output template
-in Phase 3.]
+### Findings Requiring Attorney Review
 
-### PASS 1 SUMMARY TABLE
-| # | Check | Status | Key Finding | Authority |
-|---|-------|--------|-------------|-----------|
+For each ⚠ or ✗ finding, present ONE structured block:
 
-## PASS 2: TRIAL-LEVEL FINDINGS
+  **[Check Name]** — [✗ Significant Concern / ⚠ Attention Area]
 
-### {NCT} — {drug}, {indication}
+  **What we found:** [1-2 sentences: the specific gap or issue]
 
-[TABLE 1: Disclosure Inventory — full]
-[TABLE 2: Design Comparison — full]
-[Full per-check audit blocks for Checks 8-11]
+  **Why it matters:** [1-2 sentences: the legal authority and what
+  it requires, with citation — e.g., "Rule 408 requires the S-1 to
+  include all material information. The SEC told Altamira Therapeutics
+  (Feb. 2023) to remove identical language."]
 
-### PASS 2 SUMMARY TABLE
-| # | Check | Status | Key Finding | Authority | CTgov Data Point |
-|---|-------|--------|-------------|-----------|-----------------|
+  **S-1 text at issue:**
+  > "[exact quote]" — Section: {section}, Page: ~{page}
 
-## LAYER 2: ESCALATION ASSESSMENT
+  **Recommended action:** [1-2 sentences: what could be done to
+  address this — e.g., "Add adjacent disclosure of AE data to
+  support the 'well-tolerated' characterization, per the Madrigal
+  three-part test."]
 
-[Full Rule 408 analysis with findings table, calculation, and
-LLM assessment — see Phase 6 template]
+  **Escalation result:** [If escalated: the Omnicare/Rule 408/
+  Matrixx determination and rating]
 
-[Full Omnicare three-part test per flagged opinion statement —
-see Phase 6 template]
+[Repeat for each ⚠ or ✗ finding, ordered by severity.]
 
-[Matrixx defense blocker analysis — see Phase 6 template]
+### Findings Adequate
+[List ✓ findings as single-line entries: "Basic Disclosure — ✓ All
+elements present (indication, modality, stage, no-approved-products)"]
 
-## TOP FINDINGS BY PRIORITY
-
-1. {description} — Authority: {citation}
-   S-1: "{quote}" ({section}, p. {page})
-   Escalation result: {escalation rating and summary}
-
-## LIMITATIONS
-- Compares S-1 to ClinicalTrials.gov only
-- Published papers, FDA briefing docs not checked
-- Pipeline graphics as images cannot be parsed
-- ClinicalTrials.gov data reflects what the sponsor posted
-- This tool identifies risk areas for attorney review
+## Full Report
+The complete analysis with all audit blocks, legal framework, and
+evidence has been saved to: {filename}.docx
+---
 ```
+
+### 7B. Word Document (.docx)
+
+Generate a Word document using Python. The document must contain
+the complete, auditable record of the analysis. Use the `python-docx`
+package (install if needed: `pip install python-docx`).
+
+**Document structure:**
+
+```
+TITLE PAGE:
+  S-1 Clinical Trial Disclosure Analysis
+  {Company Name} ({Ticker})
+  {form_type}, filed {date}
+  Prepared by: S-1 Clinical Trial Disclosure Checker v5
+  Built by Jesus Alcocer for Norm.ai
+  Analysis date: {today}
+
+I. EXECUTIVE SUMMARY
+  [Same structured findings as the chat summary above — each finding
+  with: what we found, why it matters, S-1 text, recommended action,
+  escalation result]
+
+II. STATEMENT OF LAW
+  [The full Legal Framework from section D — D.1 through D.8,
+  including all tables, all case descriptions, all authority
+  citations. This is the same content shown in the chat at the
+  start of the analysis.]
+
+III. STEP 1: CROSS-CUTTING S-1 CHECKS
+  [Full audit block for every check: legal standard, S-1 text,
+  step-by-step findings, precedent comparison, determination,
+  and escalation if applicable]
+  Step 1 Summary Table
+
+IV. STEP 2: TRIAL-LEVEL COMPARISON
+  [For each trial:
+   - Disclosure inventory table
+   - Design comparison table
+   - Full audit block for each trial-level check]
+  Step 2 Summary Table per trial
+
+V. STEP 3: ESCALATION ASSESSMENT
+  [Full Rule 408 pattern analysis with findings table]
+  [Full Omnicare three-part test per flagged opinion]
+  [Matrixx defense blocker analysis]
+
+VI. LIMITATIONS
+  - Compares S-1 to ClinicalTrials.gov only
+  - Published papers, FDA briefing docs not checked
+  - Pipeline graphics as images cannot be parsed
+  - ClinicalTrials.gov data reflects what the sponsor posted
+  - This tool identifies risk areas for attorney review;
+    it does not determine liability or materiality
+```
+
+**Formatting requirements for the .docx:**
+- Use Heading styles (Heading 1, 2, 3) for document structure
+- Use tables for comparison data and summary tables
+- Use block quotes (indented, italic) for S-1 text quotations
+- Use bold for legal authorities and case names
+- Status symbols in tables: ✓ / ⚠ / ✗ (not colored emoji)
 
 **CRITICAL**: The summary tables are navigation aids. The audit blocks
 are the substance. Never produce summary tables without the supporting
-audit blocks. An attorney must be able to trace every GREEN, YELLOW,
-or RED determination back to: (1) the exact S-1 text, (2) the legal
-standard applied, (3) the precedent compared against, and (4) the
-step-by-step reasoning.
+audit blocks. An attorney must be able to trace every ✓, ⚠, or ✗
+determination back to: (1) the exact S-1 text, (2) the legal standard
+applied, (3) the precedent compared against, and (4) the step-by-step
+reasoning.
 
 ---
 
 ## SEVERITY RATINGS
 
-- **RED (Significant Concern)**: Clear gap. Authority directly on
-  point. Pattern matches enforcement precedent. Attorney should review.
-- **YELLOW (Attention Area)**: Gap or concern exists. Context may
-  justify. Attorney should be aware.
-- **GREEN (Adequate)**: Meets the standard.
+- **✗ Significant Concern**: Clear gap. Authority directly on point.
+  Pattern matches enforcement precedent. Attorney should review.
+- **⚠ Attention Area**: Gap or concern exists. Context may justify.
+  Attorney should be aware.
+- **✓ Adequate**: Meets the standard.
 
 Every finding must cite:
 - The exact S-1 passage (or note its absence), with section and page
 - The specific rule, case, or SEC comment letter with actual language
-- For Pass 2: the specific ClinicalTrials.gov data point
+- For Step 2: the specific ClinicalTrials.gov data point
 
 ---
 
@@ -847,17 +1091,19 @@ Every finding must cite:
 
 1. Say "raises questions under [authority]" — NOT "fails" or "violates"
 2. Say "warrants attorney review" — NOT "materially deficient"
-3. RED/YELLOW/GREEN = flag strength, not legal outcome
+3. ✗/⚠/✓ = flag strength, not legal outcome
 4. Never rate "Section 11 exposure" — that is attorney work product
 5. Present the Omnicare test as "SIGNIFICANT / MODERATE / LOW / NO
    CONCERN" — never "PASS" or "FAIL"
-6. When uncertain, flag as YELLOW with explanation of both possibilities
+6. When uncertain, flag as ⚠ with explanation of both possibilities
+7. Use descriptive check names only — never "Check 3" or "CHECK 9"
+8. Never use colored emoji (no 🟢🟡🔴) — use ✓ / ⚠ / ✗ symbols only
 
 ---
 
-## RESEARCH AUGMENTATION (RED findings only)
+## RESEARCH AUGMENTATION (✗ Significant Concern findings only)
 
-For each RED finding, present a text-to-text precedent comparison:
+For each ✗ finding, present a text-to-text precedent comparison:
 
 ```
 FINDING: [concise description]
@@ -881,7 +1127,7 @@ TEXT-TO-TEXT COMPARISON:
 
 ## IMPORTANT NOTES
 
-- Install dependencies if needed: `pip install requests beautifulsoup4 lxml`
+- Install dependencies if needed: `pip install requests beautifulsoup4 lxml python-docx`
 - EDGAR requires User-Agent header (handled by edgar_fetch.py)
 - ClinicalTrials.gov API needs no authentication
 - Rate limit: 0.2s between EDGAR requests, 1s between CTgov requests
