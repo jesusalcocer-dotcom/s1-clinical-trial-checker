@@ -454,5 +454,27 @@
       "p_value_explanation": "Companies should explain the meaning of p-values and how they relate to FDA efficacy standards",
       "post_hoc_clarity": "Post-hoc analyses must be clearly distinguished from pre-specified analyses in both text and graphics"
     }
-  }
+  },
+  "enforcement_and_cases": [
+    {
+      "id": "aveo_pharma_comment_ref",
+      "type": "enforcement_action",
+      "name": "SEC v. AVEO Pharmaceuticals",
+      "citation": "SEC Litigation Release No. 24062 (2018)",
+      "check_ids": ["fda_communications"],
+      "relevance": "Fraud charges for selective positive disclosure while omitting negative FDA feedback. The company disclosed positive aspects of FDA interactions while omitting the FDA's recommendation for an additional clinical trial.",
+      "source_doc": "reference/checks_3_4_5.md",
+      "verified": true
+    },
+    {
+      "id": "tongue_v_sanofi_comment_ref",
+      "type": "case_law",
+      "name": "Tongue v. Sanofi",
+      "citation": "816 F.3d 199 (2d Cir. 2016)",
+      "check_ids": ["fda_communications"],
+      "relevance": "Not every fact cutting against an opinion must be disclosed, but limiting principles (public info, sophisticated investors) often do NOT apply to biotech IPOs with retail investors.",
+      "source_doc": "reference/checks_3_4_5.md",
+      "verified": true
+    }
+  ]
 }

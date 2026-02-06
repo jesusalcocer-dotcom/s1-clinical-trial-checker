@@ -367,8 +367,125 @@ def _load_red_flag_phrases() -> list[str]:
         return [line.strip() for line in f if line.strip()]
 
 
-def _scan_red_flags(text: str) -> list[dict]:
-    """Scan text for red flag phrases. Returns matches with context."""
+def _load_red_flag_phrases_tiered() -> dict[str, list[str]]:
+    """Load red flag phrases organized by tier from reference file.
+
+    The file uses ## headers to separate tiers:
+      ## TIER 1 — ALWAYS CHALLENGED
+      ## TIER 2 — CHALLENGED UNLESS SUPPORTED
+      ## TIER 3 — CONTEXT-DEPENDENT
+
+    Returns: {"tier_1": [...], "tier_2": [...], "tier_3": [...]}
+    """
+    ref_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        "reference", "red_flag_phrases.txt",
+    )
+    tiers = {"tier_1": [], "tier_2": [], "tier_3": []}
+    current_tier = None
+
+    if not os.path.exists(ref_path):
+        return tiers
+
+    with open(ref_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") and not line.startswith("##"):
+                continue
+            if line.startswith("## TIER 1"):
+                current_tier = "tier_1"
+            elif line.startswith("## TIER 2"):
+                current_tier = "tier_2"
+            elif line.startswith("## TIER 3"):
+                current_tier = "tier_3"
+            elif current_tier and line:
+                tiers[current_tier].append(line)
+
+    return tiers
+
+
+def classify_red_flag_tier(phrase_match: str, context_window: str, section: str = "") -> dict:
+    """Classify a red flag phrase hit by tier and context.
+
+    Args:
+        phrase_match: The matched phrase text
+        context_window: ~500 chars surrounding the match
+        section: S-1 section name (e.g., "RISK FACTORS", "BUSINESS")
+
+    Returns: {
+        "phrase": str,
+        "tier": 1|2|3,
+        "context_type": "CAUTIONARY"|"SUPPORTED"|"STANDALONE",
+        "nearby_data": bool,
+        "section": str
+    }
+    """
+    tiers = _load_red_flag_phrases_tiered()
+    phrase_lower = phrase_match.lower().strip()
+
+    # Determine tier
+    tier = 0
+    for t1_phrase in tiers["tier_1"]:
+        if t1_phrase.lower() in phrase_lower or phrase_lower in t1_phrase.lower():
+            tier = 1
+            break
+    if tier == 0:
+        for t2_phrase in tiers["tier_2"]:
+            if t2_phrase.lower() in phrase_lower or phrase_lower in t2_phrase.lower():
+                tier = 2
+                break
+    if tier == 0:
+        for t3_phrase in tiers["tier_3"]:
+            if t3_phrase.lower() in phrase_lower or phrase_lower in t3_phrase.lower():
+                tier = 3
+                break
+    if tier == 0:
+        tier = 1  # default to most conservative
+
+    # Determine context type
+    context_lower = context_window.lower()
+    section_upper = section.upper() if section else ""
+
+    # Check if cautionary (in Risk Factors or conditional language)
+    cautionary_markers = [
+        "may not be", "cannot assure", "no guarantee", "no assurance",
+        "there can be no", "we cannot predict", "risks include",
+        "we may not", "there is no certainty",
+    ]
+    is_cautionary = (
+        "RISK FACTORS" in section_upper
+        or any(marker in context_lower for marker in cautionary_markers)
+    )
+
+    # Check if supported by nearby quantitative data
+    data_patterns = re.compile(
+        r"\b\d+(?:\.\d+)?%|\bp\s*[=<>]\s*\d|"
+        r"\bN\s*=\s*\d|\bn\s*=\s*\d|\b\d+\s*(?:of|/)\s*\d+\s*(?:patients?|subjects?)|"
+        r"\bAE\b|\bSAE\b|\badverse\s+event|"
+        r"\bdose[- ]?(?:limiting|response)|"
+        r"\bGrade\s+[1-5]",
+        re.IGNORECASE,
+    )
+    has_nearby_data = bool(data_patterns.search(context_window))
+
+    if is_cautionary:
+        context_type = "CAUTIONARY"
+    elif has_nearby_data:
+        context_type = "SUPPORTED"
+    else:
+        context_type = "STANDALONE"
+
+    return {
+        "phrase": phrase_match,
+        "tier": tier,
+        "context_type": context_type,
+        "nearby_data": has_nearby_data,
+        "section": section,
+    }
+
+
+def _scan_red_flags(text: str, section: str = "") -> list[dict]:
+    """Scan text for red flag phrases. Returns matches with context and tier."""
     phrases = _load_red_flag_phrases()
     hits = []
     for phrase in phrases:
@@ -376,10 +493,19 @@ def _scan_red_flags(text: str) -> list[dict]:
         for m in pattern.finditer(text):
             start = max(0, m.start() - 150)
             end = min(len(text), m.end() + 150)
+            context = text[start:end].strip()
+            # Extended context for tier classification
+            ext_start = max(0, m.start() - 250)
+            ext_end = min(len(text), m.end() + 250)
+            ext_context = text[ext_start:ext_end].strip()
+            tier_info = classify_red_flag_tier(phrase, ext_context, section)
             hits.append({
                 "phrase": phrase,
-                "context": text[start:end].strip(),
+                "context": context,
                 "position": m.start(),
+                "tier": tier_info["tier"],
+                "context_type": tier_info["context_type"],
+                "nearby_data": tier_info["nearby_data"],
             })
     return hits
 
@@ -705,6 +831,102 @@ def extract_passages(filepath: str, nct_number: str) -> list[dict]:
     soup = _load_html(filepath)
     sections = _extract_sections(soup)
     return _extract_passages_for_name(nct_number, sections)
+
+
+def link_passages_to_trials(
+    passages: list[dict], ctgov_trials: list[dict]
+) -> list[dict]:
+    """Link S-1 passages to specific ClinicalTrials.gov trials.
+
+    Matching strategy (in priority order):
+    1. Explicit NCT ID in passage text
+    2. Trial title match (official or brief title keywords)
+    3. Contextual clues: phase + indication + enrollment number
+
+    Args:
+        passages: List of passage dicts with "text" and "section" keys
+        ctgov_trials: List of CTgov trial dicts with identification, design info
+
+    Returns:
+        passages annotated with "trial_nct_id" or "UNMATCHED"
+    """
+    for passage in passages:
+        text = passage.get("text", "")
+        matched_nct = None
+        match_method = None
+
+        # Strategy 1: Explicit NCT ID
+        nct_matches = NCT_RE.findall(text)
+        if nct_matches:
+            for trial in ctgov_trials:
+                trial_nct = trial.get("identification", {}).get("nct_id", "")
+                if trial_nct in nct_matches:
+                    matched_nct = trial_nct
+                    match_method = "explicit_nct"
+                    break
+
+        # Strategy 2: Trial title keywords
+        if not matched_nct:
+            text_lower = text.lower()
+            for trial in ctgov_trials:
+                ident = trial.get("identification", {})
+                official = ident.get("official_title", "").lower()
+                brief = ident.get("brief_title", "").lower()
+                # Extract significant words from title (>4 chars)
+                title_words = set(
+                    w for w in re.findall(r"\b\w{5,}\b", f"{official} {brief}")
+                    if w not in {"study", "trial", "phase", "patients", "safety",
+                                 "efficacy", "evaluation", "treatment", "clinical",
+                                 "double", "blind", "randomized", "placebo",
+                                 "controlled", "multi", "center", "open", "label"}
+                )
+                # Require at least 2 distinctive words to match
+                matched_words = sum(1 for w in title_words if w in text_lower)
+                if matched_words >= 2:
+                    matched_nct = ident.get("nct_id", "")
+                    match_method = "title_keywords"
+                    break
+
+        # Strategy 3: Phase + indication + enrollment
+        if not matched_nct:
+            text_lower = text.lower()
+            phase_in_passage = PHASE_ANY_RE.findall(text)
+            enrollment_in_passage = re.findall(
+                r"(\d+)\s*(?:patients?|subjects?|participants?)",
+                text, re.IGNORECASE,
+            )
+
+            for trial in ctgov_trials:
+                trial_phases = trial.get("design", {}).get("phases", [])
+                trial_enrollment = trial.get("design", {}).get("enrollment_count")
+                trial_nct = trial.get("identification", {}).get("nct_id", "")
+
+                phase_match = False
+                for pp in phase_in_passage:
+                    for tp in trial_phases:
+                        if pp.replace(" ", "").lower() in tp.replace(" ", "").replace("_", "").lower():
+                            phase_match = True
+                            break
+
+                enrollment_match = False
+                if trial_enrollment and enrollment_in_passage:
+                    for ep in enrollment_in_passage:
+                        try:
+                            if abs(int(ep) - trial_enrollment) < trial_enrollment * 0.2:
+                                enrollment_match = True
+                                break
+                        except ValueError:
+                            pass
+
+                if phase_match and enrollment_match:
+                    matched_nct = trial_nct
+                    match_method = "contextual_clues"
+                    break
+
+        passage["trial_nct_id"] = matched_nct or "UNMATCHED"
+        passage["trial_match_method"] = match_method or "none"
+
+    return passages
 
 
 # ── CLI ───────────────────────────────────────────────────────────────

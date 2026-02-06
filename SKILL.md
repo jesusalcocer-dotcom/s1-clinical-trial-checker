@@ -86,26 +86,44 @@ Final report with all findings, sources, and reasoning
 
 ### D. Legal Framework
 
-Three layers:
-1. **Baseline Rules**: Section 11, Rule 408, Rule 10b-5, FDAAA 801
-2. **Supreme Court Standards**: Omnicare, Matrixx, TSC Industries
-3. **Enforcement Precedents**: Clovis, Harkonen, AVEO, Tongue, Rigel
+**Governing provisions:**
+- Securities Act § 11 (15 U.S.C. § 77k): Strict liability for material misstatements or omissions in registration statements.
+- Rule 408 (17 C.F.R. § 230.408): The S-1 must include "such further material information as may be necessary to make the required statements not misleading."
+- Regulation S-K, Items 101(c) and 303: Require description of products, business, and material trends.
+
+**How specific standards are derived:**
+There is no current SEC industry guide for biotech S-1s. The specific disclosure requirements are derived from SEC **comment letters** — written feedback sent to registrants during S-1 review. This framework is built from 22+ verified verbatim SEC comment letter excerpts, 3 enforcement actions, and 5 case law authorities, all specific to clinical trial disclosure in biotech filings.
+
+For full legal brief, see `reference/legal_brief.md`.
 
 ### E. Checklist Preview
 
-| # | Check | What We're Looking For |
-|---|-------|----------------------|
-| 1 | Basic Disclosure | Drug identity, indication, stage |
-| 2 | Phase Labels | Combined labels explained |
-| 3 | Preclinical Framing | Animal data labeled; MoA as hypothesis |
-| 4 | Comparative Claims | Comparisons supported by head-to-head data |
-| 5 | FDA Communications | Balanced disclosure |
-| 6 | Pipeline Accuracy | Graphic matches text |
-| 7 | Red Flag Phrases | SEC-challenged language |
-| 8 | Trial Design Match | S-1 matches ClinicalTrials.gov |
-| 9 | Endpoint Hierarchy | Primary prominently disclosed |
-| 10 | Safety Data Match | Characterizations match AE data |
-| 11 | Data Maturity | Preliminary data labeled |
+### Checklist Structure
+
+**STEP 1: Are the drug candidates described correctly?**
+  - A. Basic Completeness
+    - Check 1: Basic Disclosure Elements
+    - Check 2: Phase Label Accuracy
+    - Check 6: Pipeline Accuracy
+  - B. Safety & Efficacy Language
+    - Check 7: Red Flag Phrases
+    - Check 3: Preclinical Framing
+    - Check 4: Comparative Claims
+  - C. FDA Communications & Maturity
+    - Check 5: FDA Communications
+    - Check 11: Data Maturity
+
+**STEP 2: Are the clinical studies described correctly?**
+  - Check 8: Trial Design Match
+  - Check 9: Endpoint Hierarchy (Harkonen Check)
+  - Check 10: Safety Data Match
+  - Check 11: Data Maturity
+  - FDAAA 801: Results Posting Compliance
+
+**STEP 3: Does the overall pattern mislead?**
+  - Omnicare Opinion Test (575 U.S. 175)
+  - Rule 408 Pattern Analysis (17 C.F.R. § 230.408)
+  - Matrixx Defense Blocker (563 U.S. 27)
 
 ### F. Enter a Ticker
 
@@ -261,7 +279,16 @@ For studies WITHOUT results: design-only check.
 | Element | ClinicalTrials.gov | S-1 Says | Status |
 |---------|--------------------|----------|--------|
 
-Color coding: GREEN = Match, YELLOW = Partial/Absent, RED = Mismatch.
+### Output Format
+
+**Summary table** (shown first):
+- ✓ = MATCH (GREEN) — element verified
+- ✗ = MISMATCH (RED) — discrepancy found
+- ≈ = PARTIAL MATCH (YELLOW) — incomplete
+- ⬜ = UNVERIFIABLE — cannot be checked
+- ⚠ = ESCALATED / ALERT — requires review
+
+Followed by unfurled detail per check with full S-1 text in comparison cells.
 
 Same auto-flow rules as Pass 1.
 
@@ -273,17 +300,15 @@ Same auto-flow rules as Pass 1.
 
 If all Layer 1 findings are GREEN, **skip Layer 2** and go to the report.
 
-For each flagged finding, apply the appropriate escalation:
+### Layer 2: Escalation Assessment
 
-1. **Rule 408 Pattern**: Tabulate ALL findings. Classify direction
-   (favors company / neutral / disfavors company). Calculate one-sided
-   percentage. See `reference/guardrails.json` for thresholds.
+When Layer 1 checks produce YELLOW or RED findings, three escalation tests fire:
 
-2. **Omnicare Test**: For opinion/characterization findings, apply the
-   three-part test. See `reference/guardrails.json` for procedure.
+1. **Omnicare Opinion Test** (575 U.S. 175, 2015): For each opinion statement flagged, tests whether it (a) embeds a false factual claim, (b) omits known contrary facts, or (c) implies a stronger inquiry than actually occurred.
 
-3. **Matrixx Check**: For small-trial or significance-related findings,
-   note the defense-blocker.
+2. **Rule 408 Pattern Analysis** (17 C.F.R. § 230.408): Across ALL findings, checks whether omissions consistently favor the company (>75% = likely pattern, 50-75% = possible pattern).
+
+3. **Matrixx Defense Blocker** (563 U.S. 27, 2011): Prevents dismissal of findings on "not statistically significant" grounds. Small-trial adverse events (N<50) may be material regardless of statistical power.
 
 **Read**: `reference/guardrails.json` for exact procedures, table
 formats, and calibration language.
@@ -400,18 +425,16 @@ TEXT-TO-TEXT COMPARISON:
 - S-1 HTML files can be large (2-5 MB); parsing may take a moment
 - Pipeline graphics embedded as images cannot be analyzed programmatically
 
-## Reference Files
+### Reference Files
 
-Used during analysis (read these before their corresponding phase):
-
-- `reference/operationalized_checks.json` — All 11 checks with logic,
-  patterns, thresholds, and LLM prompt templates
-- `reference/legal_framework.json` — Statutes, case law, enforcement
-  actions with comparison pairs
-- `reference/comment_letter_excerpts.json` — Verbatim SEC comments
-  organized by topic
+- `reference/operationalized_checks.json` — Check definitions with comparison pairs and escalation prompts
+- `reference/comment_letter_excerpts.json` — 23+ SEC comment letter excerpts
+- `reference/legal_framework.json` — Statutes, case law, enforcement actions
 - `reference/guardrails.json` — Layer 2 escalation procedures
-  (Rule 408, Omnicare, Matrixx)
-- `reference/red_flag_phrases.txt` — Machine-readable phrase list
-
-For the full technical specification, see `s1_checker_skill_spec_v4.md`.
+- `reference/red_flag_phrases.txt` — Three-tier phrase classification
+- `reference/legal_brief.md` — Full lawyer-auditable legal framework
+- `reference/study_specific_output.md` — Step 2 output format specification
+- `reference/check2_phase_labels.md` — Check 2 deep-dive with comparison pairs
+- `reference/checks_3_4_5.md` — Checks 3, 4, 5 deep-dive with comparison pairs
+- `reference/checks_6_7.md` — Checks 6, 7 deep-dive with comparison pairs
+- `reference/placeholders_todo.md` — Tracking file for unfilled S-1 text slots

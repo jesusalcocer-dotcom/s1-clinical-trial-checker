@@ -1,4 +1,35 @@
 {
+  "analysis_structure": {
+    "step_1": {
+      "name": "Are the drug candidates described correctly?",
+      "description": "Cross-cutting S-1 language checks",
+      "sub_groups": {
+        "A_basic_completeness": {
+          "checks": [1, 2, 6],
+          "legal_basis": "Rule 408 — completeness requirement"
+        },
+        "B_safety_efficacy_language": {
+          "checks": [7, 3, 4],
+          "legal_basis": "Safety/efficacy solely within FDA authority"
+        },
+        "C_fda_communications_maturity": {
+          "checks": [5, 11],
+          "legal_basis": "Balanced disclosure + AVEO enforcement"
+        }
+      }
+    },
+    "step_2": {
+      "name": "Are the clinical studies described correctly?",
+      "description": "Per-study comparison against ClinicalTrials.gov",
+      "required_elements_table": "See reference/study_specific_output.md §II",
+      "checks": [8, 9, 10, 11, "FDAAA_801"]
+    },
+    "step_3": {
+      "name": "Does the overall pattern mislead?",
+      "description": "Escalation assessment across all findings",
+      "tests": ["omnicare", "rule_408_pattern", "matrixx_defense_blocker"]
+    }
+  },
   "statutes_and_regulations": [
     {
       "id": "section_11",

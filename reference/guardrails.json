@@ -45,7 +45,14 @@
   "omnicare_opinion_test": {
     "legal_basis_id": "omnicare",
     "legal_basis_citation": "575 U.S. 175 (2015)",
-    "question": "For each opinion statement flagged in the analysis, does it raise questions under the Omnicare three-part test?",
+    "question": "Does the opinion statement (a) embed a false factual claim, or (b) omit known contrary facts?",
+    "three_parts": {
+      "part_1_embedded_fact": "Does the opinion contain or imply a factual assertion?",
+      "part_2_omitted_contrary": "Were there known facts that cut against the opinion? Were they disclosed?",
+      "part_3_basis": "Did the speaker have a reasonable basis for the opinion at the time?"
+    },
+    "output_scale": ["NO_CONCERN", "LOW", "MODERATE", "SIGNIFICANT"],
+    "detailed_question": "For each opinion statement flagged in the analysis, does it raise questions under the Omnicare three-part test?",
     "procedure": [
       "Step 1: Identify all opinion statements flagged during analysis (safety characterizations like 'well-tolerated,' efficacy claims like 'demonstrated clinical activity,' regulatory characterizations like 'aligned with the FDA')",
       "Step 2: For each, apply Test 1 (Sincerity): Does the company actually believe this opinion? (Usually assumed unless there is direct contrary evidence)",
@@ -134,5 +141,11 @@
     "interaction_with_rigel": {
       "note": "Rigel (697 F.3d 869) cabins the Matrixx principle: even though adverse events may be material without statistical significance, a company that discloses top-line safety data is not required to disclose every safety-related result. The question is whether the omitted data renders the stated data misleading. The Matrixx check should be applied in conjunction with the Rigel partial-disclosure framework."
     }
+  },
+
+  "matrixx_defense_blocker": {
+    "legal_basis": "Matrixx Initiatives v. Siracusano, 563 U.S. 27 (2011)",
+    "principle": "There is no bright-line statistical significance threshold for materiality. A reasonable investor might find even non-statistically-significant adverse event data important.",
+    "application": "When a company discloses small-trial results (N<50) without noting lack of statistical power, and a YELLOW or RED finding exists, note that Matrixx forecloses the defense that 'the results weren't statistically significant enough to matter.'"
   }
 }

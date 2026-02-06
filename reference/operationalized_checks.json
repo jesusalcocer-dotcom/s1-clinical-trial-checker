@@ -1,5 +1,5 @@
 {
-  "version": "4.0",
+  "version": "5.0",
   "description": "Operationalized check definitions for the S-1 Clinical Trial Disclosure Checker. Each check includes pseudocode logic, grep patterns, thresholds, LLM prompt templates with slots, and references to precedent language in other reference files.",
   "checks": [
     {
@@ -96,7 +96,80 @@
         "yellow": "combined labels present without adequate explanation"
       },
       "legal_basis_ids": ["rule_408"],
-      "comment_letter_excerpt_ids": ["excerpt_phase_001", "excerpt_phase_002", "excerpt_phase_003"]
+      "comment_letter_excerpt_ids": ["excerpt_phase_001", "excerpt_phase_002", "excerpt_phase_003"],
+      "comparison_pairs": [
+        {
+          "id": "sensei_phase_labels",
+          "company": "Sensei Biotherapeutics",
+          "filing_type": "S-1",
+          "filing_date": "2021-01-15",
+          "s1_text_challenged": "Phase 1/2 and Phase 2/3 — throughout the prospectus",
+          "sec_comment_verbatim": "Please remove all references to 'Phase 1/2' and 'Phase 2/3' clinical trials throughout the prospectus and instead reference either phase 1, 2, or 3 distinctly or tell us the basis for your belief that have been approved to conduct a Phase 1/2 trial.",
+          "what_sec_required": "Remove combined phase labels or provide basis for belief that combined-phase trials were approved by FDA",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "The canonical SEC comment on Phase 1/2 nomenclature. Shows the SEC's concern that combined labels imply shorter development."
+        },
+        {
+          "id": "nuvalent_phase_labels",
+          "company": "Nuvalent, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2021-07-14",
+          "s1_text_challenged": "Phase 1/2 — throughout the prospectus",
+          "sec_comment_verbatim": "Please remove all references to 'Phase 1/2' clinical trials throughout the prospectus and instead reference either phase 1, 2, or 3 distinctly or tell us the basis for your belief that have been approved to conduct a Phase 1/2 trial.",
+          "what_sec_required": "Remove combined phase labels or justify with FDA basis",
+          "severity_level": "MEDIUM",
+          "useful_for_comparison_because": "Shows another successful defense of Phase 1/2 label. Key elements: FDA pre-IND meeting, IND accepted under that title, distinct portions described."
+        },
+        {
+          "id": "taysha_phase_labels",
+          "company": "Taysha Gene Therapies, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2020-09-24",
+          "s1_text_challenged": "Pipeline table showing combined Phase 1/2 for all product candidates",
+          "sec_comment_verbatim": "Include separate columns for Phase 1 and Phase 2 trials or tell us the basis for your belief that you will be able to conduct Phase 1/2 trials for all your product candidates.",
+          "what_sec_required": "Separate Phase 1 and Phase 2 into distinct columns in pipeline table, or justify combined Phase 1/2 for all products",
+          "severity_level": "MEDIUM",
+          "useful_for_comparison_because": "Demonstrates a regulatory/scientific justification for combined Phase 1/2 in gene therapy."
+        }
+      ],
+      "severity_spectrum": {
+        "description": "Phase label severity depends on whether the combined label is explained and whether FDA has accepted the protocol design",
+        "levels": [
+          {"label": "GREEN_CLEAR", "description": "No combined labels, OR combined label with explanation of distinct portions and FDA basis cited", "example": "Phase 1/2 study with dose escalation (Phase 1) and expansion cohort (Phase 2) per FDA-accepted protocol"},
+          {"label": "YELLOW_BORDERLINE", "description": "Combined label present with some explanation but missing FDA basis", "example": "Phase 1/2 with description of dose escalation but no mention of FDA accepting the design"},
+          {"label": "RED_MATCHES_CHALLENGED", "description": "Combined label used throughout without any explanation of distinct portions", "example": "Repeated use of 'Phase 1/2' and 'Phase 2/3' with no discussion of what each portion involves"}
+        ]
+      },
+      "escalation_prompt": {
+        "trigger": "combined_label_without_explanation",
+        "source_doc": "reference/check2_phase_labels.md",
+        "source_section": "ESCALATION_PROMPT_ARCHITECTURE",
+        "steps": [
+          {
+            "step": 1,
+            "name": "text_to_text_comparison",
+            "executor": "llm",
+            "prompt_source": "reference/check2_phase_labels.md#STEP_1",
+            "slots": ["{{S1_TEXT}}", "{{COMPARISON_PAIRS}}"],
+            "output_format": {"type": "json", "keys": ["classification", "explanation_present", "severity", "step1_assessment"]}
+          },
+          {
+            "step": 2,
+            "name": "web_search_augmentation",
+            "executor": "web_search",
+            "trigger": "fires_only_on_CONCERN_or_SIGNIFICANT_CONCERN",
+            "query_template": "SEC comment letter Phase 1/2 nomenclature biotech {{YEAR_RANGE}}",
+            "output_keys": ["search_result", "assessment: STRENGTHEN|WEAKEN|NEUTRAL"]
+          },
+          {
+            "step": 3,
+            "name": "final_determination",
+            "executor": "llm",
+            "prompt_source": "reference/check2_phase_labels.md#STEP_3",
+            "output_keys": ["final_status: GREEN|YELLOW|RED", "narrative"]
+          }
+        ]
+      }
     },
     {
       "id": "preclinical_framing",
@@ -152,7 +225,62 @@
         "red": "factual MoA language with no clinical data support and no caveat"
       },
       "legal_basis_ids": ["rule_408", "section_11"],
-      "comment_letter_excerpt_ids": ["excerpt_preclinical_001", "excerpt_preclinical_002", "excerpt_preclinical_003"]
+      "comment_letter_excerpt_ids": ["excerpt_preclinical_001", "excerpt_preclinical_002", "excerpt_preclinical_003"],
+      "comparison_pairs": [
+        {
+          "id": "curanex_preclinical",
+          "company": "Curanex Pharmaceuticals",
+          "filing_type": "S-1/A",
+          "filing_date": "2024-07-17",
+          "s1_text_challenged": "[PLACEHOLDER — to be filled from SEC filing]",
+          "sec_comment_verbatim": "You state that your lead product candidate, Phyto-N, has demonstrated promising efficacy in animal models and has a long history of safe use in traditional medicine. Safety and efficacy determinations are solely within the authority of the FDA or comparable foreign regulator.",
+          "what_sec_required": "Remove all safety/efficacy inferences from preclinical data. Objective data and endpoint results are acceptable without efficacy conclusions.",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Comprehensive example of preclinical claims being struck. Covers both animal model efficacy claims and traditional use safety claims.",
+          "_todo": "Fetch S-1 text from SEC EDGAR for Curanex CIK 0002025942"
+        },
+        {
+          "id": "virpax_preclinical",
+          "company": "Virpax Pharmaceuticals, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2020-09-04",
+          "s1_text_challenged": "[PLACEHOLDER — to be filled from SEC filing]",
+          "sec_comment_verbatim": "We note your disclosure that early animal studies indicate that Probudur may provide pain control for up to 96 hours. Please revise these and similar statements throughout your registration statement that state or imply that your product candidates are safe or effective.",
+          "what_sec_required": "Remove statements implying safety or efficacy from animal data. Add detailed preclinical methodology disclosure.",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Shows SEC requiring not just removal of claims but affirmative addition of methodology details.",
+          "_todo": "Fetch S-1 text from SEC EDGAR for Virpax CIK 0001708331"
+        }
+      ],
+      "severity_spectrum": {
+        "description": "Preclinical framing severity depends on how strongly efficacy/safety is asserted from non-clinical data",
+        "levels": [
+          {"label": "GREEN_CLEAR", "description": "Preclinical data presented with hypothetical framing and translation-risk caveats", "example": "'In preclinical models, the drug candidate was designed to inhibit X. Animal results may not be predictive of human outcomes.'"},
+          {"label": "YELLOW_BORDERLINE", "description": "Factual language for MoA but with nearby caveats", "example": "'The drug inhibits X in animal models' with nearby caveat about predictiveness"},
+          {"label": "RED_MATCHES_CHALLENGED", "description": "Safety or efficacy conclusions drawn from preclinical data", "example": "'Demonstrated promising efficacy in animal models' or 'long history of safe use'"}
+        ]
+      },
+      "escalation_prompt": {
+        "trigger": "factual_safety_efficacy_claims_from_preclinical_data",
+        "source_doc": "reference/checks_3_4_5.md",
+        "source_section": "CHECK_3_PRECLINICAL",
+        "steps": [
+          {
+            "step": 1,
+            "name": "claim_classification",
+            "executor": "llm",
+            "prompt_source": "reference/checks_3_4_5.md#CHECK_3_PRECLINICAL",
+            "slots": ["{{S1_TEXT}}", "{{PRECLINICAL_CLAIMS}}", "{{COMPARISON_PAIRS}}"],
+            "output_format": {"type": "json", "keys": ["claim_type", "data_source", "caveat_present", "severity"]}
+          },
+          {
+            "step": 2,
+            "name": "final_determination",
+            "executor": "llm",
+            "output_keys": ["final_status: GREEN|YELLOW|RED", "narrative"]
+          }
+        ]
+      }
     },
     {
       "id": "comparative_claims",
@@ -198,7 +326,93 @@
         "red": "unqualified comparative claims without head-to-head data"
       },
       "legal_basis_ids": ["rule_408", "section_11"],
-      "comment_letter_excerpt_ids": ["excerpt_comparative_001", "excerpt_comparative_002", "excerpt_comparative_003"]
+      "comment_letter_excerpt_ids": ["excerpt_comparative_001", "excerpt_comparative_002", "excerpt_comparative_003"],
+      "comparison_pairs": [
+        {
+          "id": "nuvalent_comparative",
+          "company": "Nuvalent, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2021-07-14",
+          "s1_text_challenged": "potential best-in-class product candidate[s] — pages 3, 118, 130 and elsewhere",
+          "sec_comment_verbatim": "We note your statement on pages 3, 118, 130 and elsewhere in the prospectus that your lead product candidates are 'potential best-in-class product candidate[s].' The term 'best-in-class' suggests that the product candidates are effective and likely to be approved. Please delete these references.",
+          "what_sec_required": "Delete all 'best-in-class' references — term implies effectiveness and likely approval",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Clear example of 'best-in-class' being rejected. Even 'potential best-in-class' was rejected."
+        },
+        {
+          "id": "zenas_comparative",
+          "company": "Zenas BioPharma, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2024-05-15",
+          "s1_text_challenged": "Claims that obexelimab is 'safer' and 'more effective' than competitor therapies",
+          "sec_comment_verbatim": "We note statements here, and throughout the prospectus, claiming that obexelimab is 'safer' and 'more effective' than anti-CD20 or other anti-CD19 targeting therapies. Qualifying language that statements of safety and efficacy are expressions of the company's beliefs or expectations do not address this concern.",
+          "what_sec_required": "Remove 'safer' and 'more effective' claims. Qualifying language ('we believe', 'we expect') does NOT cure the concern.",
+          "severity_level": "HIGH",
+          "key_rule": "Qualifying language DOES NOT address the concern — this exact sentence overrides the instinct to treat 'we believe' as a hedge",
+          "useful_for_comparison_because": "Critical example showing that 'we believe' qualifiers do NOT cure safety/efficacy claims."
+        },
+        {
+          "id": "khosla_valo_comparative",
+          "company": "Khosla Ventures / Valo Health",
+          "filing_type": "S-4",
+          "filing_date": "2021-07-28",
+          "s1_text_challenged": "[PLACEHOLDER — to be filled from SEC filing]",
+          "sec_comment_verbatim": "Please remove the comparison to S1P1R functional antagonists unless these antagonists were included in a head-to-head clinical trial. Please also remove your disclosure regarding an appropriate safety profile.",
+          "what_sec_required": "Remove comparisons unless head-to-head trial conducted. Remove 'appropriate safety profile'. Clarify statistical significance.",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Comprehensive example hitting safety comparison, statistical significance, and post-hoc analysis clarity.",
+          "_todo": "Fetch S-4 text from SEC EDGAR for CIK 0001841873"
+        },
+        {
+          "id": "curanex_comparative_crossref",
+          "company": "Curanex Pharmaceuticals",
+          "filing_type": "S-1/A",
+          "filing_date": "2024-07-17",
+          "s1_text_challenged": "Claims of 'superior anti-inflammatory properties' vs FDA-approved Rezdiffra",
+          "sec_comment_verbatim": "You state that Phyto-N boasts superior anti-inflammatory properties and unlike recently FDA approved Rezdiffra, Phyto-N mitigates inflammation occurrence without causing adverse reaction. Please discuss your basis for such claims.",
+          "what_sec_required": "Provide basis for superiority claims against approved drugs when only preclinical data exists",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Shows comparing a preclinical candidate favorably to an FDA-approved drug requires direct comparative data."
+        }
+      ],
+      "severity_spectrum": {
+        "description": "Comparative claims severity from factual distinction to explicit superiority",
+        "levels": [
+          {"label": "GREEN_FACTUAL_DISTINCTION", "description": "Factual description of how technology differs from competitors with cautionary language", "example": "'Our approach uses X mechanism, which differs from Y. This is not an indication of effectiveness.'"},
+          {"label": "YELLOW_DIFFERENTIATED", "description": "'Differentiated' or 'novel' without implying approval likelihood", "example": "'Our differentiated approach targets X' — borderline, may imply advantage"},
+          {"label": "ORANGE_BEST_IN_CLASS", "description": "'Best-in-class' or 'first-in-class' — implies effectiveness and approval", "example": "'Our potential best-in-class candidate' — SEC has consistently rejected this"},
+          {"label": "RED_SAFER_MORE_EFFECTIVE", "description": "Direct safety/efficacy comparisons ('safer', 'more effective', 'superior')", "example": "'Safer and more effective than existing therapies'"},
+          {"label": "RED_NAMED_COMPETITOR", "description": "Superiority claims against named FDA-approved drugs without head-to-head data", "example": "'Unlike Rezdiffra, our drug does not cause adverse reactions'"}
+        ]
+      },
+      "escalation_prompt": {
+        "trigger": "comparative_claim_without_head_to_head_data",
+        "source_doc": "reference/checks_3_4_5.md",
+        "source_section": "CHECK_4_COMPARATIVE",
+        "steps": [
+          {
+            "step": 1,
+            "name": "claim_classification",
+            "executor": "llm",
+            "prompt_source": "reference/checks_3_4_5.md#CHECK_4_COMPARATIVE",
+            "slots": ["{{S1_TEXT}}", "{{COMPARATOR_DRUG}}", "{{COMPARISON_PAIRS}}"],
+            "output_format": {"type": "json", "keys": ["claim_type", "comparator_identified", "head_to_head_cited", "qualifier_present", "severity"]}
+          },
+          {
+            "step": 2,
+            "name": "qualifier_analysis",
+            "executor": "llm",
+            "note": "Per Zenas: qualifying language ('we believe') does NOT cure the concern",
+            "output_keys": ["qualifier_cures: YES|NO", "rationale"]
+          },
+          {
+            "step": 3,
+            "name": "final_determination",
+            "executor": "llm",
+            "output_keys": ["final_status: GREEN|YELLOW|RED", "narrative"]
+          }
+        ]
+      }
     },
     {
       "id": "fda_communications",
@@ -259,7 +473,86 @@
       "legal_basis_ids": ["rule_408", "omnicare"],
       "enforcement_precedent_ids": ["aveo_pharma"],
       "case_law_ids": ["tongue_v_sanofi"],
-      "comment_letter_excerpt_ids": ["excerpt_fda_001", "excerpt_fda_002", "excerpt_fda_003"]
+      "comment_letter_excerpt_ids": ["excerpt_fda_001", "excerpt_fda_002", "excerpt_fda_003"],
+      "comparison_pairs": [
+        {
+          "id": "aerovate_fda",
+          "company": "Aerovate Therapeutics, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2021-06-02",
+          "s1_text_challenged": "[PLACEHOLDER — to be filled from SEC filing]",
+          "sec_comment_verbatim": "We note your statement that you have received regulatory guidance from the FDA that your clinical program could support a NDA submission. Please revise to provide context for such statement and balance your disclosure.",
+          "what_sec_required": "Balance FDA guidance disclosure with uncertainty language. Remove implications that approval is more likely.",
+          "severity_level": "MEDIUM",
+          "useful_for_comparison_because": "Shows that positive FDA interactions must be balanced with uncertainty language.",
+          "_todo": "Fetch S-1 text from SEC EDGAR for Aerovate CIK 0001798749"
+        },
+        {
+          "id": "annovis_fda",
+          "company": "Annovis Bio, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2019-06-21",
+          "s1_text_challenged": "Expecting efficacy, claiming safety, projecting FDA approval date (2024)",
+          "sec_comment_verbatim": "We note your disclosure that you expect your lead compound to be efficacious and that you showed in studies that ANVS-401 was safe on page 1, that you expect to obtain FDA approval in 2024 on page 2.",
+          "what_sec_required": "Remove all safety/efficacy claims. Remove projected FDA approval timeline.",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Extreme example showing multiple prohibited patterns: efficacy claims, safety claims, and approval timeline projections."
+        }
+      ],
+      "enforcement_actions": [
+        {
+          "id": "aveo_pharma_enforcement",
+          "name": "SEC v. AVEO Pharmaceuticals",
+          "citation": "SEC Litigation Release No. 24062 (2018)",
+          "relevance": "Fraud charges for selective positive disclosure while omitting negative FDA feedback",
+          "source_doc": "reference/checks_3_4_5.md",
+          "source_section": "AVEO_ENFORCEMENT"
+        }
+      ],
+      "case_law": [
+        {
+          "id": "tongue_v_sanofi_ref",
+          "name": "Tongue v. Sanofi",
+          "citation": "816 F.3d 199 (2d Cir. 2016)",
+          "relevance": "Not every fact cutting against an opinion must be disclosed, but Tongue limiting principles often do NOT apply to biotech IPOs",
+          "source_doc": "reference/checks_3_4_5.md",
+          "source_section": "TONGUE_V_SANOFI"
+        }
+      ],
+      "two_test_framework": {
+        "balance_test": "If positive FDA interactions described, are negative interactions also disclosed?",
+        "framing_test": "Do positive characterizations imply approval is likely or accelerated?",
+        "section_placement": "Are positives in Business/Summary while negatives are only in Risk Factors?"
+      },
+      "severity_spectrum": {
+        "description": "FDA communication severity depends on balance, framing, and section placement",
+        "levels": [
+          {"label": "GREEN_CLEAR", "description": "Balanced disclosure — positive and negative FDA interactions both described, no approval timeline projection", "example": "S-1 describes Breakthrough Therapy designation while noting FDA required additional trials"},
+          {"label": "YELLOW_ASYMMETRIC", "description": "Positive in Business/Summary, negative only in Risk Factors; or positive framing implies accelerated path without caveats", "example": "Business section describes 'positive FDA feedback' while Risk Factors mention 'FDA required additional studies'"},
+          {"label": "RED_ONE_SIDED", "description": "Positive FDA mentions with zero negative disclosures, or projected approval timelines; matches AVEO pattern", "example": "'We expect to obtain FDA approval in 2024' or selective disclosure of positive interactions only"}
+        ]
+      },
+      "escalation_prompt": {
+        "trigger": "asymmetric_fda_disclosure_or_approval_implications",
+        "source_doc": "reference/checks_3_4_5.md",
+        "source_section": "CHECK_5_FDA",
+        "steps": [
+          {
+            "step": 1,
+            "name": "balance_and_framing_test",
+            "executor": "llm",
+            "prompt_source": "reference/checks_3_4_5.md#CHECK_5_FDA",
+            "slots": ["{{POSITIVE_FDA_PASSAGES}}", "{{NEGATIVE_FDA_PASSAGES}}", "{{SECTION_PLACEMENT}}"],
+            "output_format": {"type": "json", "keys": ["balance_result", "framing_result", "aveo_similarity", "severity"]}
+          },
+          {
+            "step": 2,
+            "name": "final_determination",
+            "executor": "llm",
+            "output_keys": ["final_status: GREEN|YELLOW|RED", "narrative"]
+          }
+        ]
+      }
     },
     {
       "id": "pipeline_accuracy",
@@ -308,7 +601,49 @@
         "red": "table overstates development progress vs text"
       },
       "legal_basis_ids": ["rule_408", "section_11"],
-      "comment_letter_excerpt_ids": ["excerpt_phase_003"]
+      "comment_letter_excerpt_ids": ["excerpt_phase_003"],
+      "comparison_pairs": [
+        {
+          "id": "taysha_pipeline",
+          "company": "Taysha Gene Therapies, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2020-09-24",
+          "s1_text_challenged": "Pipeline table showing combined Phase 1/2 for all products, 'Pivotal' instead of Phase 3",
+          "sec_comment_verbatim": "Include separate columns for Phase 1 and Phase 2 trials or tell us the basis for your belief. Also replace 'Pivotal' with 'Phase 3' and merge 'preclinical' and 'IND-enabling' columns.",
+          "what_sec_required": "Separate phases in pipeline table, use standard phase terminology, merge preclinical columns",
+          "severity_level": "MEDIUM",
+          "useful_for_comparison_because": "Shows SEC requirements for pipeline table formatting including standard phase terminology."
+        }
+      ],
+      "severity_spectrum": {
+        "description": "Pipeline accuracy depends on format and consistency with text",
+        "levels": [
+          {"label": "GREEN_CLEAR", "description": "HTML table matches text descriptions and uses standard phase terminology", "example": "Table shows Phase 1 for Drug A, text consistently describes Phase 1 trial"},
+          {"label": "YELLOW_IMAGE", "description": "Pipeline is embedded as image — cannot verify programmatically", "example": "Pipeline graphic as PNG/JPG, requires manual review"},
+          {"label": "RED_MISMATCH", "description": "Table overstates progress vs text or uses non-standard terminology", "example": "Table shows Phase 2 but text only describes Phase 1 data; 'Pivotal' used instead of Phase 3"}
+        ]
+      },
+      "escalation_prompt": {
+        "trigger": "pipeline_table_mismatch_or_non_standard_terminology",
+        "source_doc": "reference/checks_6_7.md",
+        "source_section": "CHECK_6_PIPELINE",
+        "steps": [
+          {
+            "step": 1,
+            "name": "table_analysis",
+            "executor": "llm",
+            "prompt_source": "reference/checks_6_7.md#CHECK_6_PIPELINE",
+            "slots": ["{{PIPELINE_TABLE}}", "{{TEXT_DESCRIPTIONS}}", "{{CTGOV_DATA}}"],
+            "output_format": {"type": "json", "keys": ["format_type", "consistency_issues", "terminology_issues", "severity"]}
+          },
+          {
+            "step": 2,
+            "name": "final_determination",
+            "executor": "llm",
+            "output_keys": ["final_status: GREEN|YELLOW|RED", "narrative"]
+          }
+        ]
+      }
     },
     {
       "id": "red_flag_phrases",
@@ -376,7 +711,117 @@
         "red": ">10 standalone instances of same phrase, or closely matching precedent"
       },
       "legal_basis_ids": ["rule_408"],
-      "comment_letter_excerpt_ids": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_safety_004", "excerpt_safety_005"]
+      "comment_letter_excerpt_ids": ["excerpt_safety_001", "excerpt_safety_002", "excerpt_safety_003", "excerpt_safety_004", "excerpt_safety_005"],
+      "comparison_pairs": [
+        {
+          "id": "altamira_red_flags",
+          "company": "Altamira Therapeutics Ltd.",
+          "filing_type": "F-1",
+          "filing_date": "2023-02-24",
+          "s1_text_challenged": "'safe and effective', 'safe and well tolerated', 'favorable safety profile' — used on multiple pages",
+          "sec_comment_verbatim": "We note statements in numerous places throughout the registration statement stating or suggesting that your OligoPhore and SemaPhore peptide polyplex platform technology is 'safe and effective.' Please remove all statements throughout your registration statement that state or imply your conclusions regarding the safety or efficacy of your product candidates.",
+          "what_sec_required": "Remove ALL statements stating or implying safety/efficacy conclusions. 'Well-tolerated' (if true) and 'no SAEs reported' are acceptable.",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Comprehensive anchor example showing the full range of prohibited safety/efficacy language."
+        },
+        {
+          "id": "graybug_red_flags",
+          "company": "Graybug Vision, Inc.",
+          "filing_type": "S-1",
+          "filing_date": "2020-08-27",
+          "s1_text_challenged": "'favorable safety and tolerability' — page 21 and elsewhere",
+          "sec_comment_verbatim": "Please revise your disclosure to remove your characterization of GB-102 as safe, as a determination of whether a product candidate is safe is solely within the authority of the FDA.",
+          "what_sec_required": "Remove characterization as 'safe'. 'Well tolerated' and SAE count disclosures are acceptable.",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Shows that 'favorable safety and tolerability' is treated the same as 'safe'."
+        },
+        {
+          "id": "madrigal_red_flags",
+          "company": "Madrigal Pharmaceuticals, Inc.",
+          "filing_type": "10-K",
+          "filing_date": "2023-11-21",
+          "s1_text_challenged": "'Resmetirom was safe and well tolerated' — page 10",
+          "sec_comment_verbatim": "Determinations related to safety are within the sole authority of the FDA. Additionally, please disclose all serious adverse events related to Resmetirom. Explain how you have determined that the candidate is well tolerated when trial participants experienced serious adverse events.",
+          "what_sec_required": "Three-part: (a) stop safety assessments, (b) disclose all SAEs, (c) explain basis for 'well tolerated' given SAEs occurred",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Shows SEC challenges even 'well tolerated' when SAEs have occurred. Three-part structure is a common pattern.",
+          "three_part_test": true
+        },
+        {
+          "id": "scopus_red_flags",
+          "company": "Scopus BioPharma Inc.",
+          "filing_type": "Form 1-A",
+          "filing_date": "2020-06-24",
+          "s1_text_challenged": "'acceptable safety profile'",
+          "sec_comment_verbatim": "Safety is a determination that is solely within the authority of the FDA or similar foreign regulators. You may state that your product candidates are well tolerated if true. Please revise this statement accordingly.",
+          "what_sec_required": "Remove 'acceptable safety profile'; 'well tolerated if true' is acceptable",
+          "severity_level": "HIGH",
+          "useful_for_comparison_because": "Shows 'acceptable safety profile' is treated as a prohibited safety determination."
+        },
+        {
+          "id": "os_therapies_red_flags",
+          "company": "OS Therapies Inc",
+          "filing_type": "S-1",
+          "filing_date": "2023-03-27",
+          "s1_text_challenged": "'the data presented from the Phase Ib trial demonstrated that ADXS31-164 was well tolerated' — SEC required substantiation, not removal",
+          "sec_comment_verbatim": "Please further revise to present the Phase 1b endpoints, the trial results, and your conclusions with respect to the primary and secondary endpoints. Investors should be able to assess how the drug candidate performed relative to the established endpoints.",
+          "what_sec_required": "Present endpoints, results, and conclusions. Disclose statistical significance. Provide enough data for investors to verify 'well tolerated' claim.",
+          "severity_level": "MEDIUM",
+          "useful_for_comparison_because": "Shows SEC nuanced approach: 'well tolerated' NOT rejected but required substantiating endpoint data."
+        }
+      ],
+      "three_tier_classification": {
+        "source_doc": "reference/checks_6_7.md",
+        "source_section": "THREE_TIER_CLASSIFICATION",
+        "tier_1_always_challenged": ["safe", "effective", "safe and effective", "safe and well tolerated", "proven safety", "proven efficacy", "established safety", "established efficacy", "favorable safety profile", "acceptable safety profile", "demonstrated efficacy", "demonstrated safety", "superior", "best-in-class"],
+        "tier_2_challenged_unless_supported": ["well-tolerated", "well tolerated", "favorable tolerability", "favorable safety and tolerability"],
+        "tier_3_context_dependent": ["no serious adverse events", "no SAEs", "no treatment-related SAEs", "preliminary", "preliminary data"]
+      },
+      "severity_spectrum": {
+        "description": "Red flag phrase severity depends on tier, context, and accumulation",
+        "levels": [
+          {"label": "GREEN_CLEAR", "description": "Phrase in cautionary context (Risk Factors) or with supporting data", "example": "'Well-tolerated' immediately followed by AE rates and SAE counts"},
+          {"label": "YELLOW_BORDERLINE", "description": "Tier 2 phrase without nearby supporting data, or Tier 3 phrase without context", "example": "'Well-tolerated' in Business section without nearby AE data"},
+          {"label": "RED_MATCHES_CHALLENGED", "description": "Tier 1 phrase in any standalone context, or >10 standalone instances of any phrase", "example": "'Safe and effective' in Prospectus Summary"}
+        ]
+      },
+      "escalation_prompt": {
+        "trigger": "standalone_tier_1_or_tier_2_phrases_or_accumulation_pattern",
+        "source_doc": "reference/checks_6_7.md",
+        "source_section": "ESCALATION_PROMPT_CHECK7",
+        "steps": [
+          {
+            "step": 1,
+            "name": "instance_by_instance_analysis",
+            "executor": "llm",
+            "prompt_source": "reference/checks_6_7.md#ESCALATION_PROMPT_CHECK7",
+            "slots": ["{{PHRASE}}", "{{S1_TEXT}}", "{{SECTION}}", "{{PAGE}}", "{{COMPARISON_PAIRS}}"],
+            "sub_questions": ["What tier is this phrase?", "Is it cautionary or standalone?", "Is data within 500 chars?", "What section is it in?", "Does it match a challenged pattern?", "What is the severity?"],
+            "output_format": {"type": "json", "keys": ["tier", "context_type", "nearby_data", "section", "matches_precedent", "severity"]}
+          },
+          {
+            "step": 2,
+            "name": "global_madrigal_three_part_test",
+            "executor": "llm",
+            "description": "Apply Madrigal three-part test across entire S-1: (a) safety assessments, (b) SAE disclosure, (c) basis for tolerability claims given SAEs",
+            "output_keys": ["part_a_result", "part_b_result", "part_c_result", "overall_assessment"]
+          },
+          {
+            "step": 3,
+            "name": "web_search",
+            "executor": "web_search",
+            "trigger": "fires_on_RED_or_multiple_YELLOW",
+            "query_template": "SEC comment letter safety characterization well-tolerated biotech {{YEAR_RANGE}}",
+            "output_keys": ["search_result", "assessment: STRENGTHEN|WEAKEN|NEUTRAL"]
+          },
+          {
+            "step": 4,
+            "name": "final_determination",
+            "executor": "llm",
+            "output_keys": ["final_status: GREEN|YELLOW|RED", "narrative", "tier_1_count", "tier_2_unsupported_count"]
+          }
+        ]
+      }
     },
     {
       "id": "trial_design_comparison",

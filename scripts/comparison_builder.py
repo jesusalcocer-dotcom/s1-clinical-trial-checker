@@ -33,6 +33,32 @@ CTGOV_PHASE_MAP = {
     "PHASE4": {"Phase 4"},
 }
 
+# Required Disclosure Elements — from SEC comment letter precedents
+# Each element is required by at least one SEC comment letter
+REQUIRED_ELEMENTS = [
+    {"element": "enrollment", "authority": "Immunocore (Dec. 14, 2020)"},
+    {"element": "participation_criteria", "authority": "Immunocore"},
+    {"element": "treatment_duration", "authority": "Immunocore"},
+    {"element": "dosage", "authority": "Immunocore"},
+    {"element": "primary_endpoint", "authority": "Maze (Jul. 25, 2024)"},
+    {"element": "secondary_endpoints", "authority": "Maze"},
+    {"element": "endpoints_achieved", "authority": "Maze"},
+    {"element": "statistical_significance", "authority": "OS Therapies (Mar. 27, 2023)"},
+    {"element": "sae_description_count", "authority": "Maze"},
+    {"element": "primary_endpoint_failure", "authority": "Stealth (Nov. 21, 2018)"},
+    {"element": "statistical_power", "authority": "Coya (Nov. 4, 2022)"},
+    {"element": "data_maturity_label", "authority": "Sensei (Dec. 9, 2020)"},
+]
+
+# Status icons for improved output format
+STATUS_ICONS = {
+    "MATCH": "\u2713",
+    "MISMATCH": "\u2717",
+    "PARTIAL": "\u2248",
+    "UNVERIFIABLE": "\u2b1c",
+    "ESCALATED": "\u26a0",
+}
+
 
 def _normalize_s1_phase(phase_str: str) -> set[str]:
     """Parse S-1 phase string into a set of canonical phase numbers.
@@ -573,6 +599,30 @@ def _color_code_element(status: str) -> str:
     elif status in ("MISMATCH", "CONTRADICTED", "high"):
         return "RED"
     return "GRAY"
+
+
+def _status_icon(status: str) -> str:
+    """Map a comparison status to a Unicode status icon for display output.
+
+    \u2713 = MATCH (GREEN), \u2717 = MISMATCH (RED), \u2248 = PARTIAL (YELLOW),
+    \u2b1c = UNVERIFIABLE, \u26a0 = ESCALATED / ALERT
+    """
+    return STATUS_ICONS.get(status, "\u2b1c")
+
+
+def format_element_status(element: str, ctgov_value: str, s1_value: str, status: str) -> str:
+    """Format a single element comparison line for display.
+
+    Returns a formatted string like:
+      \u2713  Enrollment: 120 patients (S-1: "approximately 120 patients")
+      \u2717  Primary endpoint: PFS (S-1: not found)
+    """
+    icon = _status_icon(status)
+    color = _color_code_element(status.lower() if status != "MATCH" else status)
+    if s1_value:
+        return f"  {icon}  {element}: {ctgov_value} (S-1: \"{s1_value[:100]}\")"
+    else:
+        return f"  {icon}  {element}: {ctgov_value} (S-1: not found)"
 
 
 def _compare_results(s1_passages: list[dict], ctgov_study: dict) -> dict:

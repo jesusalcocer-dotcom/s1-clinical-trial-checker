@@ -1,21 +1,34 @@
+# RED FLAG PHRASES — Three-Tier Classification
+# Tier 1: ALWAYS CHALLENGED (remove regardless of context)
+# Tier 2: CHALLENGED UNLESS SUPPORTED (requires nearby data)
+# Tier 3: CONTEXT-DEPENDENT (may be acceptable with proper framing)
+
+## TIER 1 — ALWAYS CHALLENGED
 safe
 effective
-clinically validated
-clinically proven
-proven efficacy
+safe and effective
+safe and well tolerated
 proven safety
-favorable clinical activity
-promising tolerability
+proven efficacy
+established safety
+established efficacy
 favorable safety profile
 acceptable safety profile
-well-tolerated
-safer than
-more effective than
-superior to
+demonstrated efficacy
+demonstrated safety
+superior
 best-in-class
-first-in-class
-fast-to-market
-accelerated commercialization
-positive FDA feedback
-FDA endorsement
-clinically meaningful
+
+## TIER 2 — CHALLENGED UNLESS SUPPORTED
+well-tolerated
+well tolerated
+demonstrated that .* was well tolerated
+favorable tolerability
+favorable safety and tolerability
+
+## TIER 3 — CONTEXT-DEPENDENT
+no serious adverse events
+no SAEs
+no treatment-related SAEs
+preliminary
+preliminary data
