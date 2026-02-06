@@ -1,5 +1,5 @@
 ---
-name: S-1 Clinical Trial Checker
+name: s-1-clinical-trial-checker
 description: Analyze S-1 or F-1 registration statements for clinical trial disclosure adequacy by comparing against ClinicalTrials.gov data.
 metadata:
   dependencies: python>=3.8, requests, beautifulsoup4, lxml
