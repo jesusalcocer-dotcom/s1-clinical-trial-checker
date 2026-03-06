@@ -1,6 +1,6 @@
 # S-1 Clinical Trial Disclosure Checker &mdash; Skill Specification v5.0
 
-**Author**: Jesus Alcocer, Norm.ai
+**Author**: Jesus Alcocer
 **Version**: 5.0
 **Date**: 2026-02-06
 
@@ -707,10 +707,10 @@ following sections:
 
 ### Section A: What This Tool Is
 
-> This tool was built by **Jesus Alcocer** for **Norm.ai** assessment
-> purposes. It checks whether a biotech company's S-1 registration
-> statement adequately discloses clinical trial information by comparing
-> the S-1 text to the public record on ClinicalTrials.gov.
+> This tool was built by **Jesus Alcocer**. It checks whether a biotech
+> company's S-1 registration statement adequately discloses clinical trial
+> information by comparing the S-1 text to the public record on
+> ClinicalTrials.gov.
 
 ### Section B: What is a "Skill"?
 
@@ -1165,7 +1165,7 @@ After building is complete, verify:
 - [ ] SKILL.md references "v5" and matches Layer 1 / Layer 2 architecture
 - [ ] SKILL.md does NOT use the word "module" anywhere
 - [ ] README.md accurately describes the current file structure
-- [ ] README.md includes attribution (Jesus Alcocer, Norm.ai)
+- [ ] README.md includes attribution (Jesus Alcocer)
 - [ ] README.md describes Layer 1 / Layer 2 architecture
 - [ ] All reference JSON files use consistent ID schemes
 - [ ] `operationalized_checks.json` references `legal_framework.json` by ID
