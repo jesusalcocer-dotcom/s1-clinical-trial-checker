@@ -1,6 +1,6 @@
 # S-1 Clinical Trial Disclosure Checker
 
-**Built by Jesus Alcocer**
+**Built by Jesus Alcocer for Norm.ai**
 
 A Claude Skill that checks whether biotech S-1 (or F-1) registration
 statements adequately disclose clinical trial information by comparing
@@ -113,4 +113,4 @@ confirmation at each major step.
 
 ## License
 
-Proprietary. Built by Jesus Alcocer.
+Proprietary. Built by Jesus Alcocer for Norm.ai.

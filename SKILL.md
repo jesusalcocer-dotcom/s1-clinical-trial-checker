@@ -1,6 +1,6 @@
 ---
 name: s-1-clinical-trial-checker
-description: Analyze S-1 or F-1 registration statements for clinical trial disclosure adequacy by comparing against ClinicalTrials.gov data. Built by Jesus Alcocer.
+description: Analyze S-1 or F-1 registration statements for clinical trial disclosure adequacy by comparing against ClinicalTrials.gov data. Built by Jesus Alcocer for Norm.ai.
 metadata:
   version: "5.0"
   dependencies: python>=3.8, requests, beautifulsoup4, lxml, python-docx
@@ -92,10 +92,10 @@ When triggered, present these sections **before any code executes**:
 
 ### A. What This Tool Is
 
-> This tool was built by **Jesus Alcocer**. It checks whether a biotech
-> company's S-1 registration statement adequately discloses clinical trial
-> information by comparing the S-1 text to the public record on
-> ClinicalTrials.gov.
+> This tool was built by **Jesus Alcocer** for **Norm.ai** assessment
+> purposes. It checks whether a biotech company's S-1 registration
+> statement adequately discloses clinical trial information by comparing
+> the S-1 text to the public record on ClinicalTrials.gov.
 
 ### B. What a Skill Is
 
@@ -1542,7 +1542,7 @@ After completing all steps, display this structured summary in chat:
 Company: {name} | Ticker: {ticker}
 Filing: {form_type}, filed {date}
 Analysis date: {today}
-Tool: S-1 Clinical Trial Disclosure Checker v5 (Jesus Alcocer)
+Tool: S-1 Clinical Trial Disclosure Checker v5 (Jesus Alcocer, Norm.ai)
 Candidate: {candidate_name} | Indication: {indication}
 Trials analyzed: {list of NCT IDs}
 
@@ -1601,7 +1601,7 @@ TITLE PAGE:
   {Company Name} ({Ticker})
   {form_type}, filed {date}
   Prepared by: S-1 Clinical Trial Disclosure Checker v5
-  Built by Jesus Alcocer
+  Built by Jesus Alcocer for Norm.ai
   Analysis date: {today}
 
 I. EXECUTIVE SUMMARY
